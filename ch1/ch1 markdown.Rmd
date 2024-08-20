@@ -1,0 +1,92 @@
+---
+title: "Chapter 1"
+output: word_document
+date: "2024-08-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+This is for the review from chapter 1
+
+```{r}
+library(readr)
+```
+
+data
+
+```{r}
+treadmill <- read_csv('http://www.math.montana.edu/courses/s217/documents/treadmill.csv')
+treadmill
+```
+
+downloading his package
+
+```{r}
+library(remotes)
+remotes::install_github('greenwood-stat/catstats2')
+```
+
+```{r}
+library(catstats2)
+data(treadmill)
+
+library(mosaic)
+```
+
+explore with this package \####
+
+```{r}
+data <- treadmill
+```
+
+summary stats
+
+```{r}
+favstats(data$RunTime)
+```
+
+visuals
+
+```{r}
+hist(data$RunTime)
+hist(data$RunTime, labels = T)
+```
+
+outlier? the standard for base R boxplot is that an outlier is 1.5 times greater than the IQR (inter-quartile range) IQR = Q3 - Q1
+
+```{r}
+IQR <- 11.27 - 9.78
+IQR
+
+11.27 + 1.5*IQR
+```
+
+it appears that the max of 14.03 is an outlier
+
+```{r}
+boxplot(data$RunTime,
+        ylab  = '1.5 Mile Run Time (minutes)',
+        main = 'Boxplot of run times of n=31')
+```
