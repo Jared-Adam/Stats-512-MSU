@@ -1,5 +1,5 @@
 # This is for the review from chapter 1
-
+#####
 library(readr)
 
 # data 
@@ -121,6 +121,59 @@ library(patchwork)
 
 plot_fs + p_es +
   plot_annotation(tag_levels = 'a')
+
+
+
+
+
+
+
+
+# section 1.8 on reproducibility ####
+library(mosaic)
+library(tidyverse)
+library(catstats2)
+data(cardist_2014)
+
+cardist_2014 <- cardist_2014 %>% 
+  mutate(Condition = factor(Condition)) 
+
+plot_all <- enhanced_stripchart(Distance ~ Condition, data = cardist_2014) + 
+  labs(title = "(a) Plot of all groups and observations")
+set.seed(50311)
+
+card_red <- cardist_2014 %>% 
+  dplyr::select(Distance, Condition) %>% 
+  filter(Condition %in% c('commute', 'casual')) %>% 
+  group_by(Condition) %>% 
+  slice_sample(n = 15) %>%  # random sample of 15 from each level of the group_by()
+  ungroup()
+
+plot_sample <- enhanced_stripchart(Distance ~ Condition, data = card_red) +
+  labs(title = '(b) Plot of random sample of two groups')
+plot_all/plot_sample
+
+ # lm time 
+lm_red <- lm(Distance ~ Condition, data = card_red)
+summary(lm_red)
+
+# looking at common mean
+lm_commonmean <- lm(Distance ~ 1, data = card_red)
+summary(lm_commonmean)
+favstats(Distance ~ 1, data = card_red)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
