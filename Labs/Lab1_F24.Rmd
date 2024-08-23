@@ -1,0 +1,191 @@
+---
+title: "Lab 1"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: Names of group members
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(readr)
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+#install.packages('betareg')
+library(betareg)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+#remotes::install_github("greenwood-stat/ggResidpanel")
+#library(ggResidpanel)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# Lab 1 Instructions:
+
+Working in a group of 2, 3, or 4 people (randomly assigned in class, singletons allowed on this first lab too if you miss the in-person session), complete the following questions. Turn in a single *PDF* _from your word document_ for the group _with all group member names on it_ after knitting this document with your answers "in-line" (after the questions). Part of the assignment is to create a document that can successfully knit. You can discuss this lab with people outside of your lab group, but you must document any sources of information outside of the instructors, your group members, and the materials I am providing you (like web resources or other folks that you might ask for help).
+
+Note that you have free access to Adobe Acrobat Pro via MSU at https://www.montana.edu/uit/students/adobe/index.html and will find that useful for merging separate files into a single PDF this semester. Do not knit directly to PDF in this class - the code templates are not designed to do this correctly.
+
+Make sure to run spell-check using the "ABC check" button near the filename or use (i.e., pay attention to) the text underlining suggestions in the document (like for "filename"). The word document will not have spell-check turned on when built from a .Rmd file, so do the checking here.
+
+The initial header contains some packages we will use frequently this semester. In addition to packages from CRAN, we need two special packages available from my github repository. In order to access them, you need to download and load the `remotes` package. Then uncomment the lines that contain `#remotes::install_github("greenwood-stat/ggResidpanel")` and `#remotes::install_github("greenwood-stat/catstats2")`. Do this to download the packages and then re-comment those lines as you will not need to do that again unless you update your version of R or change computers. Do NOT use `install.packages("ggResidpanel")` as this will install a different version. Then you can uncomment the `#library(ggResidpanel)` line for this lab and future uses.
+
+
+
+## White matter lesions:
+
+To get a chance to review and practice/learn to use R, we will explore the data set posted to accompany Biner et al.'s (2015) "Factors related to intra-tendinous morphology of Achilles tendon in runners". Please read the paper prior to August 23 to prepare for our first lab and we will revisit it for many more analyses.
+
+
+*-* Birner A, Seiler S, Lackner N, Bengesser SA, Queissner R, Fellendorf FT, et al. (2015) Cerebral White Matter Lesions and Affective Episodes Correlate in Male Individuals with Bipolar Disorder. PLoS ONE 10(8): e0135313. doi:10.1371/journal.pone.0135313
+
+* Use the link to download the paper or use the provided pdf of the paper on D2L. We will get further into what they did a bit later on. 
+
+* The data set is provided on D2L as a .csv file. Download the file and save it into a *new* folder, where you will store the data __and__ today's data analysis file.   
+
+* It is good code writing practice to keep a set of all related data, analysis, plots, documents, etc. in the same folder. When all the pieces are in the same folder, it allows for a clean workflow and working directory. When you are executing code for a document/script `R` will search for things (such as data) in the __same__ folder as the document/script. If you are having troubles loading your data into RStudio and you have saved your files in this way, it is possible that `R` is searching in the wrong location and you need to change your working directory.
+
+* The easiest way to do this is,  
+
+    - click on the __Session__ drop-down from the top of the screen,  
+    - select the __Set Working Directory__ tab,  
+    - select __To Source File Location__.  
+    - Copy the code into the code chunk before the code to read in the data set.
+
+* After this process `R` will be searching for objects (such as data) in the __same__ folder that the document/script you're working on is saved in. 
+
+* Now we can simply read the data set into R using `read_csv("file.csv")` (this does require the `readr` (Wickham et al., 2024) R package (R Core Team, 2024))
+
+* An example of a couple of citations:
+
+    - Wickham H, Hester J, Bryan J (2024). _readr: Read Rectangular Text Data_. R package version 2.1.5
+
+    - R Core Team (2024). _R: A Language and Environment for Statistical Computing_. R Foundation for Statistical Computing, Vienna, Austria.
+
+```{r, warning=F, message=F}
+## 1. Make sure this RMarkdown file is saved in the SAME folder as the bipolar data 
+## 2. Now load the bipolar data into R
+
+bpdata <- read_csv("bipolardata.csv")
+
+#View(bpdata)
+
+#head(bpdata)
+
+#tail(bpdata)
+
+glimpse(bpdata)
+```
+
+* If you are used to using the "Import Dataset" button in RStudio, you can select whether to use the `read_csv` function from `readr` instead of `read.csv`, which will read the data set in as a `tibble`. If you use `read.csv`, it will be read the data in as a `data.frame`. You can use either, with tibbles you will need to transform any categorical variables as factors (using `factor` within a `mutate` string (see example below)) to use the functions we use. In `data.frame`s, assumptions are made about what is factor and what is numeric or character strings and can then require processing after the data are read in to deal with some ways variables are coded, especially when missing data are present and coded in some way other than empty cells. This course focuses on using `tidyverse` methods.
+
+* Another option in RStudio is to use the `readxl` package and its `read_excel` function to read data sets directly from Excel spreadsheets (this function figures out whether it is a .xls or .xlsx file). Storing data in Excel allows you to maintain multi-tab Excel data sets, read in from the desired page, and even select the rows to read in. I posted the `datafile_bipolar.xlsx` file and it contains the same information as the .csv file in the `SourceDataWMLBirner` tab. It also contains some "meta-data" about the variables in the `Variables` tab. You will need that information to answer some questions. I would not read that into R but the utility of working with Excel spreadsheets is illustrated in this situation to be able to store "metadata" in the same file but in a way that doesn't contaminate the data itself.
+
+* It is a good idea to explore the data set briefly. Explore the results of `View(bpdata)` (you will need to uncomment), `head(bpdata)`, and `tail(bpdata)`.
+
+* We will focus on the `nWML_sum` as a response variable (renamed below to `NormVolume`). This is their "volume of cerebral white matter lesions" measurement in cubic millimeters divided by total intracranial volume. For some reason it can exceed one. They call this `normalization` although that term more typically means re-scaling a response to have mean 0 and SD of 1 (a z-score). This is a ratio response that is like a rate (volume of lesions over total volume). 
+
+* The following code leverages some functions from the `tidyverse` to change names of some unfortunately named variables (`rename`) and the `mutate` function is used to change some of the numerically coded factor variables into factors and the `fct_recode` function is used to incorporate some of the metadata on the variables into more explicit factor labels.
+
+```{r}
+ library(tidyverse)
+
+bpdata <- bpdata %>% dplyr::rename(IllnessDuration = 'Illness duration',
+                                   NormVolume = 'nWML_sum',
+                                   SubDep = 'substance dependancy',
+                                   AlcDep = 'alcohol dependancy',
+                                   AnxDis = 'anxiety disorder',
+                                   smoking = 'smoking_yes_no') %>% 
+      mutate(group = factor(group),
+             sex = factor(sex),
+             YMRS = factor(YMRS),
+             DM = factor(DM),
+             smoking = factor(smoking),
+             HYPERT = factor(HYPERT),
+             group = fct_recode(group, 
+                                patient = "1", 
+                                HC = "2"),
+             sex = fct_recode(sex, 
+                              male = "1",
+                              female = "2"),
+             smoking = fct_recode(smoking,
+                                  no = "0",
+                                  yes = "1"),
+             GroupSexCombs = factor(str_c(group, sex)) #For later use
+             )
+```
+
+
+
+
+1) Generate and report the summary statistics using the `favstats` function from `mosaic` for the `NormVolume` variable both overall and for `BD` and `HC` groups.  Report your code and output. No discussion.
+
+```{r}
+library(mosaic)
+favstats(NormVolume ~ 1, data = bpdata)
+favstats(NormVolume ~ group, data = bpdata)
+
+
+```
+
+
+2) Plot the `NormVolume` variable by `group`. Report your `R` code and plots.
+
+```{r fig.height = 4, fig.width=8}
+ggplot(bpdata, aes(group, NormVolume))+
+  geom_point()
+
+```
+
+
+3) Generate a potentially appropriate statistical test to compare the two groups. Report `R` code and output. No discussion. 
+
+
+```{r}
+lm1 <- lm(NormVolume ~ group, data = bpdata)
+summary(lm1)
+
+```
+
+
+4) In Table 1, they note that they used a model for the normalized WML volumes that include the BD/HC variable as its focus but "controlled for age, diabetes, smoking and BMI". Uncomment and modify the following code to improve the coding of the `DM` variable. 
+
+
+```{r}
+bpdata <- bpdata %>% mutate(
+  DM = fct_recode(DM, 
+                  no = "0",
+                  yes = "1"))
+
+```
+
+
+5) Fit the linear model they describe using `NormVolume` as the response variable using `group`, `age1`, `DM`, `smoking` and `BMI` as explanatory variables (no interactions). Report your `R` code and a model `summary()`. 
+
+```{r, warning = FALSE, message = FALSE}
+lm2 <- lm(NormVolume ~ group + age1 + DM + smoking + BMI, data = bpdata)
+summary(lm2)
+
+```
+
+6) Make and report an `effects` plot of the your model from the previous question.  No discussion, just the plot.  
+
+```{r fig.height = 10, fig.width = 10}
+# Install and load the effects package
+library(effects)
+
+plot(allEffects(lm2))
+
+```
+
+7) It's useful to record some information about the version of R you are using. When you `Knit` this documentation, it will report on the version of R that you are using. It should say 4.4.1 in your compiled word document:
+
+  * R version (short form): `r getRversion()`

@@ -2,7 +2,11 @@
 title: "Lab assignment number 1"
 output: word_document
 date: "2024-08-23"
+names of group: Jared, Hunter, Macy 
 ---
+
+Print this all to word and then save as a pdf for submission
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -61,7 +65,7 @@ favstats(NormVolume ~ 1, data = bpdata)
 favstats(BDI ~ 1, data = bpdata)
 # filter for BD and HC
 
-unique(bpdata$group)
+unique(bpdata$DM)
 
 HC <- bpdata %>%  
   dplyr::filter(group == 'HC')
