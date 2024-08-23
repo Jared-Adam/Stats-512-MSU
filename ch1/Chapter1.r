@@ -1,22 +1,20 @@
 # This is for the review from chapter 1
-#####
+# data and packages ####
 library(readr)
+install.packages('remotes')
+library(remotes)
+remotes::install_github('greenwood-stat/catstats2')
+library(catstats2)
+library(mosaic)
+library(tidyverse)
+
+
 
 # data 
 treadmill <- read_csv('http://www.math.montana.edu/courses/s217/documents/treadmill.csv')
 treadmill
 
-# downloading his package
-library(tidyverse)
-
-install.packages('remotes')
-library(remotes)
-remotes::install_github('greenwood-stat/catstats2')
-
-library(catstats2)
 data(treadmill)
-
-library(mosaic)
 
 # explore with this package ####
 
@@ -123,16 +121,8 @@ plot_fs + p_es +
   plot_annotation(tag_levels = 'a')
 
 
-
-
-
-
-
-
 # section 1.8 on reproducibility ####
-library(mosaic)
-library(tidyverse)
-library(catstats2)
+
 data(cardist_2014)
 
 cardist_2014 <- cardist_2014 %>% 
@@ -162,22 +152,48 @@ lm_commonmean <- lm(Distance ~ 1, data = card_red)
 summary(lm_commonmean)
 favstats(Distance ~ 1, data = card_red)
 
+# 
+# the citation paper ####
+data(cites)
+set.seed(406)
 
+cites_larger <- cites %>% 
+  group_by(journal_title) %>% 
+  mutate(totalcountsbyjournal = n()) %>% # adding count column
+  dplyr::filter(totalcountsbyjournal > 10)
 
+cites_strat <- cites_larger %>% 
+  slice_sample(prop = 0.5) %>%  #take 50% of the articles
+  ungroup() %>% 
+  dplyr::select(-totalcountsbyjournal)
 
+cites_strat <- cites_strat %>% 
+  mutate(onacad = factor(onacad),
+         onacad = fct_recode(onacad,
+                             'NotOnAcad' = '0', # was binary, making it categorical
+                             'OnAcad' = '1'),
+         online = factor(online),
+         online = fct_recode(online,
+                             'NotOnline' = '0',
+                             'Online' = '1'))
 
+unique(cites_strat$title)
 
+cites_strat <- cites_strat %>% mutate(
+  journal_title = factor(journal_title),
+  divisions = factor(divisions),
+  yearssincepub = 2014 - year) %>%
+  rename( ChemSci = 'Div. Chemical Sciences',
+          EnvSci = 'Div. Environmental Sciences',
+          BioSci = 'Div. Biological Sciences',
+          Eng = 'Div. Engineering',
+          MedHealthSci = 'Div. Medical and Health Sciences') %>%
+  mutate( ChemSci = factor(ChemSci),
+          EnvSci = factor(EnvSci),
+          BioSci = factor(BioSci),
+          Eng = factor(Eng),
+          MedHealthSci = factor(MedHealthSci),) %>%
+  dplyr::select(-starts_with("Div.")) #Removing unused division variables (remove code to explore your favorite discipline, but note that these are more rare in data set)
 
-
-
-
-
-
-
-
-
-
-
-
-
+# log1p() log plus one 
 
