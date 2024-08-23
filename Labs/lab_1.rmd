@@ -1,0 +1,103 @@
+---
+title: "Lab assignment number 1"
+output: word_document
+date: "2024-08-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#
+
+Start here
+
+```{r}
+library(tidyverse)
+library(mosaic)
+
+```
+
+
+```{r}
+bpdata <- bipolardata
+glimpse(bpdata)
+
+```
+
+Cleaning the data based on the rmd file provided.
+
+```{r}
+bpdata <- bpdata %>% 
+  dplyr::rename(IllnessDuration = `Illness duration`,
+                NormVolume = nWML_sum,
+                SubDep = `substance dependancy`,
+                AlcDep = `alcohol dependancy`,
+                AnxDis = `anxiety disorder`,
+                smoking = smoking_yes_no) %>% 
+  mutate(group = factor(group),
+         sex = factor(sex), 
+         YMRS = factor(YMRS), 
+         smoking = factor(smoking), 
+         HYPERT = factor(HYPERT), 
+         group = fct_recode(group,
+                            patient = '1',
+                            HC = '2'),
+         sex = fct_recode(sex,
+                          male = '1',
+                          female = '2'),
+         smoking = fct_recode(smoking,
+                              no = '0',
+                              yes = '1'),
+         GroupSexCombs = factor(str_c(group, sex)))
+
+```
+
+Question 1
+
+```{r}
+
+favstats(NormVolume ~ 1, data = bpdata)
+favstats(BDI ~ 1, data = bpdata)
+# filter for BD and HC
+
+unique(bpdata$group)
+
+HC <- bpdata %>%  
+  dplyr::filter(group == 'HC')
+
+patient <- bpdata %>% 
+  dplyr::filter(group == 'patient')
+
+favstats(group ~ 1, data = HC)
+
+favstats(group ~ 1, data = patient) # does not exist?
+
+
+```
+Question 2: Plot NormValue by group 
+
+```{r}
+ggplot(bpdata, aes(x = group, y = NormVolume))+
+  geom_point()
+
+
+```
+
+Little model 
+NormVolume = numeric 
+
+```{r}
+
+lm1 <- lm(NormVolume ~ group, data = bpdata)
+summary(lm1)
+hist(residuals(lm1))
+
+lm2 <- lm(log1p(NormVolume) ~ group, data = bpdata)
+summary(lm2)
+hist(residuals(lm2))
+
+
+#both of these are skewed
+
+```
