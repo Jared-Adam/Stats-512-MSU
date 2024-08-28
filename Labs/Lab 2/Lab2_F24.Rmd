@@ -1,0 +1,141 @@
+---
+title: "Lab 2"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: Ryan and Macy
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(readr)
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(mosaic)
+library(betareg)
+library(gtsummary)
+library(effects)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+#remotes::install_github("greenwood-stat/ggResidpanel")
+#library(ggResidpanel)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# Lab 2 Instructions:
+
+Working in a group of 2, 3, or 4 people, complete the following questions. Turn in a single *PDF* _from your word document_ for the group _with all group member names on it_ after knitting this document with your answers "in-line" (after the questions). 
+
+The initial header contains some packages we will use frequently this semester. In addition to packages from CRAN, we need two special packages available from my github repository. In order to access them, you need to download and load the `remotes` package. Then uncomment the lines that contain `#remotes::install_github("greenwood-stat/ggResidpanel")` and `#remotes::install_github("greenwood-stat/catstats2")`. Do this to download the packages and then re-comment those lines as you will not need to do that again unless you update your version of R or change computers. Do NOT use `install.packages("ggResidpanel")` as this will install a different version. Then you can uncomment the `#library(ggResidpanel)` line for this lab and future uses.
+
+
+## White matter lesions (continued):
+
+
+```{r}
+bpdata <- read_csv("bipolardata.csv")
+```
+
+
+```{r}
+ library(tidyverse)
+
+bpdata <- bpdata %>% dplyr::rename(IllnessDuration = 'Illness duration',
+                                   NormVolume = 'nWML_sum',
+                                   SubDep = 'substance dependancy',
+                                   AlcDep = 'alcohol dependancy',
+                                   AnxDis = 'anxiety disorder',
+                                   smoking = 'smoking_yes_no') %>% 
+      mutate(group = factor(group),
+             sex = factor(sex),
+             YMRS = factor(YMRS),
+             DM = factor(DM),
+             smoking = factor(smoking),
+             HYPERT = factor(HYPERT),
+             group = fct_recode(group, 
+                                patient = "1", 
+                                HC = "2"),
+             sex = fct_recode(sex, 
+                              male = "1",
+                              female = "2"),
+             smoking = fct_recode(smoking,
+                                  no = "0",
+                                  yes = "1"),
+             GroupSexCombs = factor(str_c(group, sex)) #For later use
+             )
+
+favstats(NormVolume ~ group, data = bpdata)
+inline_test <- mean(NormVolume ~ group, data = bpdata)
+```
+
+
+
+
+1) Make an enhanced stripchart for the `NormVolume` variable by `BD` and `HC` groups.  Report your code and output. Try to edit/improve the x and y-axis labels by adding and editing `+ labs(y = "Something better for y", x = "Something better for x")`. No discussion.
+
+```{r}
+e1 <- enhanced_stripchart(NormVolume ~ group, data = bpdata)+
+          labs(y = 'Something for y',
+               x = 'Something for x')
+
+```
+
+2) Normalized Volume is "unitless" since it is the ratio of two volumes (both are assumed to be in mm$^3$). One would assume that the volume of white matter lesions (numerator of the ratio) is less than the _total_ intracranial volume (denominator) that they divided by. What about the previous plot seems odd about the results given this information?
+
+*Normalized should be between 0 and 1, so the range of patient is incorrect.*
+
+3) Using the provided `favstats` and the plot, what is the estimated difference in the mean Normalized Volume between patients and health controls? Make sure you make it clear which one is larger/smaller in writing a sentence to report this ("_difference_ of ..." is not read by different people the same way). Note that Normalized Volume is "unitless" since it is the ratio of two volumes and one would assume that it should be between 0 and 1 
+
+*The mean of the patient `inline_test[1]` and the mean of the HC is `inline_test[2]`. The difference in these sample means is `inline_test[1]` - `inline_test[2]`.
+
+
+4) Fit an `lm` with `NormVolume` and as the response and `group` as the predictor. Generate a base R model `summary` and generate a nice table of results using `%>% tbl_regression(intercept = T) %>% add_global_p()`, and make an effects plot using the effects package (so something like `plot(allEffects(modelname))`). Which level of `group` was the baseline/reference level and how can you tell?
+
+
+
+```{r}
+model1 <- lm(NormVolume ~ group, bpdata)
+summary(model1)
+
+model1 %>% tbl_regression(intercept = T) %>% add_global_p()
+plot(allEffects(model1))
+
+```
+
+
+
+5) Write out the estimated model, defining the indicator variable you used.
+
+* $\hat{\mu}\{NormVolume|group\} = 0.336 - 0.14I_{group = HC}$
+
+* where $I_{group = HC}$ is 1 for HC and 0 for patient. 
+
+
+6) Interpret the "size" of the slope coefficient for the `group` row in the model summary, finding and reporting a 95% confidence in parentheses as part of that single sentence. Hint: the `confint` function is an easy way to obtain a confidence interval or it is in the `tbl_regression` output.
+
+*For an HC group member the estimated mean of NormVolume changes by -0.14 (95% CI:-0.26, -0.03).*
+
+"95% confident if we did this over and over that our mean would fall between ..."
+
+
+
+7) Report the "evidence" sentence for the `group` row in the model summary. Remember to include a conclusion where you declare what you think is going on here and/or what you would do based on the result: Do you think there is a difference or not/would you retain this term in the model?
+
+*There is strong evidence against the null hypothesis that there is no difference in the true mean of NormVolume between patient and HC groups (t~152~ = -2.457, two-sided p-value = 0.0151). This indicates that the mean of HC is lower than the patient group the term should be retained in the model*
+
+
+
+8) It's useful to record some information about the version of R you are using. When you `Knit` this documentation, it will report on the version of R that you are using. It should say 4.4.1 in your compiled word document:
+
+  * R version (short form): `r getRversion()`
+
+
+9) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question.
