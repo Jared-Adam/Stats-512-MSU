@@ -1,0 +1,202 @@
+serial number of the worker,age in years,sex,job seniority in months,body mass index in kg/m2,total sitting time in hours,Influence at work in 0-100%,low back pain categories,smoking status categories,occupational lifting/carrying time categories,total sitting time as percentage of the mean measured time per day,categories of the percent total sitting time,categories of the total sitting time in hours
+11001,48,male,120,22.99,8.37,37.50,low pain,non smokers,moderate 1/4 lift,47.35,moderate sit,high sit
+11002,32,male,41,29.62,8.28,81.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",50.30,high sit,high sit
+11003,51,male,102,24.83,8.51,75.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",53.64,high sit,high sit
+11004,65,male,480,26.83,7.16,62.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",42.40,moderate sit,moderate sit
+11005,58,male,524,28.21,10.89,93.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",66.23,high sit,high sit
+11007,45,male,240,23.50,8.94,81.25,low pain,smoker_daily or sometimes,moderate 1/4 lift,49.67,high sit,high sit
+11008,33,male,182,25.19,7.72,81.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",46.44,moderate sit,moderate sit
+11009,61,male,508,25.73,9.23,43.75,high pain,non smokers,"high all the time 3/4 time, and ½ of the time",57.48,high sit,high sit
+11011,37,male,207,40.82,10.43,18.75,low pain,smoker_daily or sometimes,"rarely, very little and never lift",65.61,high sit,high sit
+11012,27,male,23,18.96,8.71,6.25,high pain,smoker_daily or sometimes,"rarely, very little and never lift",48.74,high sit,high sit
+11013,60,male,505,26.41,13.52,43.75,high pain,non smokers,"rarely, very little and never lift",67.38,high sit,high sit
+11015,47,male,240,28.75,5.72,37.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",46.41,moderate sit,low sit
+11018,40,male,,33.48,6.96,50.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",40.40,moderate sit,moderate sit
+11019,49,male,240,25.53,8.71,62.50,high pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",55.84,high sit,high sit
+11021,53,male,144,29.77,7.75,31.25,low pain,non smokers,"rarely, very little and never lift",47.32,moderate sit,moderate sit
+11022,40,male,,27.84,8.58,50.00,high pain,,"rarely, very little and never lift",60.49,high sit,high sit
+11024,33,male,164,25.37,10.56,100.00,low pain,non smokers,moderate 1/4 lift,55.46,high sit,high sit
+11025,29,male,,21.45,6.61,18.75,low pain,,moderate 1/4 lift,43.48,moderate sit,moderate sit
+11027,43,male,86,23.24,8.87,0.00,low pain,smoker_daily or sometimes,moderate 1/4 lift,58.14,high sit,high sit
+11028,28,male,37,22.00,6.76,75.00,low pain,smoker_daily or sometimes,"rarely, very little and never lift",38.99,low sit,moderate sit
+11029,36,male,48,23.59,10.63,18.75,high pain,smoker_daily or sometimes,"rarely, very little and never lift",57.17,high sit,high sit
+11030,41,male,244,25.87,10.96,50.00,high pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",56.66,high sit,high sit
+11031,36,male,132,27.97,6.01,50.00,high pain,non smokers,"high all the time 3/4 time, and ½ of the time",46.54,moderate sit,low sit
+11032,35,male,90,32.10,9.41,18.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",59.66,high sit,high sit
+11033,45,male,240,33.26,8.24,68.75,high pain,non smokers,moderate 1/4 lift,43.96,moderate sit,moderate sit
+11034,51,male,312,24.05,9.21,68.75,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",55.61,high sit,high sit
+11035,48,male,240,33.09,7.65,31.25,low pain,smoker_daily or sometimes,moderate 1/4 lift,47.45,moderate sit,moderate sit
+11036,44,male,192,32.01,9.62,50.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",54.23,high sit,high sit
+11037,29,male,,22.15,7.41,43.75,low pain,,moderate 1/4 lift,46.33,moderate sit,moderate sit
+11038,56,male,300,20.45,12.70,68.75,low pain,smoker_daily or sometimes,"rarely, very little and never lift",69.17,high sit,high sit
+11039,54,male,120,31.12,10.65,68.75,low pain,non smokers,moderate 1/4 lift,62.13,high sit,high sit
+11040,32,male,120,28.37,6.70,37.50,low pain,non smokers,moderate 1/4 lift,46.86,moderate sit,moderate sit
+11043,55,male,86,27.78,10.15,87.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",60.77,high sit,high sit
+11044,41,male,66,39.73,10.44,62.50,low pain,non smokers,moderate 1/4 lift,65.76,high sit,high sit
+11045,44,male,,35.76,11.25,56.25,high pain,,moderate 1/4 lift,73.56,high sit,high sit
+11046,21,male,12,25.97,10.47,62.50,low pain,non smokers,"rarely, very little and never lift",68.39,high sit,high sit
+11052,28,male,4,22.72,9.12,68.75,high pain,smoker_daily or sometimes,moderate 1/4 lift,45.59,moderate sit,high sit
+11056,40,male,,25.87,9.95,37.50,high pain,smoker_daily or sometimes,moderate 1/4 lift,53.33,high sit,high sit
+11058,50,male,108,22.56,7.74,62.50,high pain,non smokers,"high all the time 3/4 time, and ½ of the time",46.78,moderate sit,moderate sit
+11059,41,male,240,28.43,9.73,75.00,low pain,non smokers,moderate 1/4 lift,56.12,high sit,high sit
+11063,38,male,48,21.03,4.69,18.75,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",29.69,low sit,low sit
+11065,45,male,96,24.15,6.67,68.75,low pain,smoker_daily or sometimes,moderate 1/4 lift,47.34,moderate sit,moderate sit
+11066,27,male,72,25.40,6.86,31.25,low pain,non smokers,moderate 1/4 lift,36.88,low sit,moderate sit
+11067,38,male,53,28.34,7.45,31.25,low pain,,moderate 1/4 lift,43.80,moderate sit,moderate sit
+11068,47,male,12,24.43,10.27,50.00,high pain,non smokers,moderate 1/4 lift,55.43,high sit,high sit
+11069,34,male,7,21.06,9.33,50.00,low pain,smoker_daily or sometimes,moderate 1/4 lift,57.85,high sit,high sit
+11072,43,male,1,22.89,5.56,37.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",35.75,low sit,low sit
+12001,63,females,399,27.47,3.67,81.25,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",20.67,low sit,low sit
+12002,33,females,72,21.08,8.72,43.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",49.14,high sit,high sit
+12004,57,females,468,39.89,8.63,50.00,high pain,non smokers,"rarely, very little and never lift",49.05,high sit,high sit
+12008,57,females,240,24.89,6.97,93.75,low pain,non smokers,"rarely, very little and never lift",49.66,high sit,moderate sit
+12009,52,females,444,22.06,5.61,87.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",36.78,low sit,low sit
+12013,58,females,576,21.36,7.51,56.25,low pain,smoker_daily or sometimes,"rarely, very little and never lift",42.29,moderate sit,moderate sit
+12014,50,females,382,23.36,9.63,62.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",51.52,high sit,high sit
+12016,38,females,84,22.14,9.00,68.75,low pain,non smokers,"rarely, very little and never lift",60.55,high sit,high sit
+12017,47,females,300,22.54,5.93,50.00,low pain,non smokers,moderate 1/4 lift,36.35,low sit,low sit
+12018,56,females,121,30.98,7.50,62.50,high pain,smoker_daily or sometimes,"rarely, very little and never lift",45.46,moderate sit,moderate sit
+12019,52,females,360,24.13,7.52,43.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",44.43,moderate sit,moderate sit
+12020,47,females,229,31.72,5.64,25.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",36.24,low sit,low sit
+12025,58,females,144,24.87,6.86,43.75,low pain,smoker_daily or sometimes,moderate 1/4 lift,47.61,moderate sit,moderate sit
+12026,21,females,72,18.63,6.05,56.25,low pain,smoker_daily or sometimes,"rarely, very little and never lift",41.44,moderate sit,low sit
+12027,32,females,180,18.02,11.17,93.75,high pain,non smokers,moderate 1/4 lift,63.69,high sit,high sit
+12028,60,females,504,26.46,4.86,56.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",31.32,low sit,low sit
+12031,55,females,12,27.01,6.64,87.50,low pain,smoker_daily or sometimes,"rarely, very little and never lift",44.14,moderate sit,moderate sit
+12032,34,females,60,23.26,6.39,100.00,high pain,non smokers,"rarely, very little and never lift",37.06,low sit,low sit
+12033,54,male,135,25.63,6.66,62.50,low pain,non smokers,moderate 1/4 lift,42.20,moderate sit,moderate sit
+12034,51,females,,40.38,5.32,43.75,low pain,,"high all the time 3/4 time, and ½ of the time",32.50,low sit,low sit
+13002,61,females,300,25.96,7.36,68.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",49.68,high sit,moderate sit
+13004,41,females,96,29.86,6.53,31.25,low pain,smoker_daily or sometimes,"rarely, very little and never lift",37.20,low sit,moderate sit
+13006,51,females,3,42.76,8.82,12.50,low pain,non smokers,"rarely, very little and never lift",45.14,moderate sit,high sit
+13007,62,females,360,34.52,7.98,62.50,low pain,non smokers,"rarely, very little and never lift",44.33,moderate sit,moderate sit
+13008,45,females,78,21.73,2.95,81.25,low pain,non smokers,"rarely, very little and never lift",17.07,low sit,low sit
+13009,59,females,132,19.11,6.31,12.50,low pain,smoker_daily or sometimes,"rarely, very little and never lift",43.22,moderate sit,low sit
+13011,56,females,408,21.80,7.78,25.00,low pain,non smokers,"rarely, very little and never lift",45.84,moderate sit,moderate sit
+13012,49,females,120,20.74,6.14,75.00,low pain,non smokers,"rarely, very little and never lift",36.13,low sit,low sit
+13020,54,females,144,20.93,6.17,31.25,low pain,smoker_daily or sometimes,"rarely, very little and never lift",34.45,low sit,low sit
+14001,51,male,306,23.77,5.47,12.50,low pain,non smokers,"rarely, very little and never lift",28.90,low sit,low sit
+14002,50,male,346,41.99,6.77,37.50,low pain,non smokers,"rarely, very little and never lift",39.20,low sit,moderate sit
+14010,43,male,264,24.73,7.77,31.25,low pain,non smokers,"rarely, very little and never lift",39.99,moderate sit,moderate sit
+14013,49,male,156,30.54,9.70,25.00,low pain,smoker_daily or sometimes,moderate 1/4 lift,49.99,high sit,high sit
+14023,45,male,264,24.33,6.98,50.00,low pain,non smokers,"rarely, very little and never lift",40.06,moderate sit,moderate sit
+14024,51,male,383,23.73,7.81,62.50,low pain,non smokers,moderate 1/4 lift,42.49,moderate sit,moderate sit
+14030,45,male,31,26.34,8.63,0.00,high pain,non smokers,"rarely, very little and never lift",45.66,moderate sit,high sit
+14032,50,male,120,25.44,10.85,43.75,high pain,non smokers,"high all the time 3/4 time, and ½ of the time",56.36,high sit,high sit
+14036,33,male,79,26.26,7.76,18.75,high pain,non smokers,moderate 1/4 lift,43.91,moderate sit,moderate sit
+14038,45,male,336,22.80,6.49,37.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",40.13,moderate sit,moderate sit
+14039,55,male,303,24.35,6.98,12.50,low pain,non smokers,"rarely, very little and never lift",39.69,low sit,moderate sit
+14045,43,male,111,24.63,2.62,68.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",14.80,low sit,low sit
+14049,41,male,171,33.02,9.39,50.00,low pain,smoker_daily or sometimes,moderate 1/4 lift,46.02,moderate sit,high sit
+14057,55,male,360,28.12,8.66,25.00,low pain,non smokers,"rarely, very little and never lift",44.93,moderate sit,high sit
+14063,37,male,120,26.06,5.46,50.00,low pain,smoker_daily or sometimes,moderate 1/4 lift,35.32,low sit,low sit
+14064,43,male,144,27.04,7.08,31.25,low pain,smoker_daily or sometimes,"rarely, very little and never lift",45.56,moderate sit,moderate sit
+14069,37,male,142,23.49,9.29,43.75,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",64.96,high sit,high sit
+14071,31,male,138,31.59,7.72,31.25,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",43.57,moderate sit,moderate sit
+14072,50,male,240,32.38,10.39,37.50,low pain,non smokers,"rarely, very little and never lift",54.23,high sit,high sit
+15025,52,females,216,22.86,8.49,56.25,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",56.41,high sit,high sit
+15026,52,females,180,26.64,9.36,43.75,low pain,non smokers,"rarely, very little and never lift",61.96,high sit,high sit
+15027,34,females,14,31.62,8.76,37.50,low pain,non smokers,moderate 1/4 lift,54.72,high sit,high sit
+15029,57,females,156,29.30,7.12,100.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",44.48,moderate sit,moderate sit
+15030,51,females,324,32.97,10.25,25.00,low pain,smoker_daily or sometimes,"rarely, very little and never lift",58.77,high sit,high sit
+15031,48,females,168,21.59,8.65,25.00,low pain,smoker_daily or sometimes,"rarely, very little and never lift",54.31,high sit,high sit
+15032,51,females,108,35.72,11.90,75.00,high pain,smoker_daily or sometimes,"rarely, very little and never lift",68.56,high sit,high sit
+15033,57,females,360,22.67,8.68,75.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",51.62,high sit,high sit
+15037,53,females,108,30.33,10.30,43.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",60.99,high sit,high sit
+15038,53,females,396,22.65,8.52,75.00,low pain,non smokers,"rarely, very little and never lift",50.75,high sit,high sit
+15039,53,females,24,28.27,7.63,0.00,high pain,non smokers,"rarely, very little and never lift",45.26,moderate sit,moderate sit
+15040,48,females,,29.17,4.17,56.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",24.09,low sit,low sit
+15041,43,females,132,36.48,8.74,25.00,high pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",56.75,high sit,high sit
+15042,61,females,49,29.42,7.08,43.75,low pain,smoker_daily or sometimes,"rarely, very little and never lift",43.11,moderate sit,moderate sit
+15044,63,male,60,30.61,10.33,50.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",66.61,high sit,high sit
+15046,60,females,336,17.59,8.21,43.75,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",48.93,high sit,moderate sit
+15048,49,females,124,25.96,11.77,62.50,high pain,smoker_daily or sometimes,"rarely, very little and never lift",68.63,high sit,high sit
+15049,54,females,464,24.68,5.62,68.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",30.90,low sit,low sit
+15050,41,male,24,28.44,7.70,37.50,high pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",41.97,moderate sit,moderate sit
+15051,49,females,48,38.06,6.79,37.50,low pain,smoker_daily or sometimes,"rarely, very little and never lift",39.83,moderate sit,moderate sit
+15053,49,females,72,36.62,10.87,50.00,low pain,smoker_daily or sometimes,"rarely, very little and never lift",62.01,high sit,high sit
+15054,49,females,86,26.18,11.40,12.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",67.63,high sit,high sit
+15060,26,females,64,18.05,6.94,68.75,low pain,smoker_daily or sometimes,"rarely, very little and never lift",43.48,moderate sit,moderate sit
+15061,27,male,22,32.16,6.74,81.25,low pain,non smokers,moderate 1/4 lift,40.14,moderate sit,moderate sit
+15063,44,females,216,25.10,9.05,100.00,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",53.08,high sit,high sit
+15065,44,male,120,18.82,6.86,43.75,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",47.14,moderate sit,moderate sit
+15068,33,females,60,19.82,8.31,31.25,low pain,,"high all the time 3/4 time, and ½ of the time",53.49,high sit,high sit
+15069,37,females,55,24.85,7.28,6.25,high pain,non smokers,"high all the time 3/4 time, and ½ of the time",37.59,low sit,moderate sit
+15071,36,females,58,40.73,9.13,50.00,low pain,non smokers,"rarely, very little and never lift",51.56,high sit,high sit
+15074,53,females,420,22.82,4.82,50.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",33.04,low sit,low sit
+15075,45,females,144,20.08,6.94,43.75,low pain,non smokers,,38.82,low sit,moderate sit
+15076,34,females,,23.37,3.66,25.00,low pain,,"high all the time 3/4 time, and ½ of the time",27.65,low sit,low sit
+16001,40,male,21,24.46,8.82,37.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",41.19,moderate sit,high sit
+16002,38,male,240,23.86,7.36,25.00,low pain,smoker_daily or sometimes,moderate 1/4 lift,42.23,moderate sit,moderate sit
+16004,49,females,240,29.31,3.94,25.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",24.97,low sit,low sit
+16005,58,male,4,23.74,6.65,25.00,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",36.67,low sit,moderate sit
+16006,48,females,42,24.21,4.95,18.75,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",30.30,low sit,low sit
+16007,57,male,21,24.09,7.32,43.75,low pain,non smokers,"rarely, very little and never lift",46.41,moderate sit,moderate sit
+16008,44,females,11,23.15,5.06,0.00,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",31.30,low sit,low sit
+16009,54,females,57,29.86,6.93,37.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",40.43,moderate sit,moderate sit
+16010,50,male,120,25.50,5.28,43.75,low pain,non smokers,"rarely, very little and never lift",33.02,low sit,low sit
+16011,42,male,48,28.71,8.40,75.00,low pain,non smokers,moderate 1/4 lift,53.00,high sit,high sit
+16012,24,male,89,26.42,7.37,68.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",46.51,moderate sit,moderate sit
+16013,48,females,64,19.91,3.43,37.50,low pain,non smokers,"rarely, very little and never lift",24.87,low sit,low sit
+16014,30,male,79,25.47,6.26,37.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",36.90,low sit,low sit
+16023,46,females,161,26.96,4.28,50.00,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",25.23,low sit,low sit
+16026,49,male,420,29.48,8.61,62.50,low pain,smoker_daily or sometimes,moderate 1/4 lift,50.42,high sit,high sit
+16027,48,females,131,29.49,4.79,56.25,low pain,non smokers,"rarely, very little and never lift",30.59,low sit,low sit
+16028,45,male,125,21.19,4.79,50.00,low pain,non smokers,"rarely, very little and never lift",31.87,low sit,low sit
+16029,50,male,46,24.83,5.09,31.25,low pain,smoker_daily or sometimes,"rarely, very little and never lift",32.81,low sit,low sit
+16030,50,females,156,30.06,3.75,75.00,low pain,non smokers,"rarely, very little and never lift",24.01,low sit,low sit
+16031,34,male,60,24.63,4.23,43.75,low pain,non smokers,"rarely, very little and never lift",26.19,low sit,low sit
+16032,42,male,132,25.73,7.70,37.50,low pain,non smokers,"rarely, very little and never lift",46.53,moderate sit,moderate sit
+16033,43,male,336,38.54,4.51,6.25,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",29.46,low sit,low sit
+16034,32,male,51,26.56,6.20,37.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",34.57,low sit,low sit
+16035,50,females,144,35.78,3.30,6.25,low pain,non smokers,moderate 1/4 lift,23.69,low sit,low sit
+16036,44,females,69,24.73,4.47,50.00,high pain,smoker_daily or sometimes,moderate 1/4 lift,28.11,low sit,low sit
+16037,31,male,96,29.40,3.02,37.50,low pain,non smokers,"rarely, very little and never lift",21.07,low sit,low sit
+16039,42,male,129,29.00,5.39,43.75,low pain,non smokers,"rarely, very little and never lift",31.41,low sit,low sit
+16040,56,male,468,25.87,4.96,6.25,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",29.87,low sit,low sit
+16041,46,male,61,25.86,5.86,18.75,low pain,smoker_daily or sometimes,moderate 1/4 lift,31.39,low sit,low sit
+16042,38,females,48,24.73,4.02,50.00,high pain,smoker_daily or sometimes,"rarely, very little and never lift",23.64,low sit,low sit
+16053,37,male,158,25.60,6.46,43.75,low pain,non smokers,"rarely, very little and never lift",41.95,moderate sit,moderate sit
+16054,46,male,60,31.23,3.66,31.25,low pain,smoker_daily or sometimes,moderate 1/4 lift,23.42,low sit,low sit
+16056,50,male,240,32.70,7.52,12.50,low pain,non smokers,moderate 1/4 lift,44.25,moderate sit,moderate sit
+16058,56,male,456,22.67,9.87,62.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",47.39,moderate sit,high sit
+16059,57,male,225,24.23,5.39,12.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",35.21,low sit,low sit
+16060,33,females,12,27.05,4.45,6.25,low pain,smoker_daily or sometimes,"rarely, very little and never lift",30.48,low sit,low sit
+16062,31,male,180,31.33,6.07,12.50,low pain,smoker_daily or sometimes,moderate 1/4 lift,40.84,moderate sit,low sit
+16063,49,male,40,25.43,5.06,25.00,low pain,non smokers,moderate 1/4 lift,28.26,low sit,low sit
+16065,49,male,47,25.48,6.98,31.25,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",42.47,moderate sit,moderate sit
+16067,29,male,24,20.64,5.94,50.00,low pain,non smokers,moderate 1/4 lift,32.49,low sit,low sit
+16068,28,females,55,21.18,5.36,6.25,high pain,smoker_daily or sometimes,"rarely, very little and never lift",33.08,low sit,low sit
+16069,27,male,24,25.57,6.00,31.25,low pain,non smokers,moderate 1/4 lift,33.78,low sit,low sit
+16070,33,male,21,27.33,4.81,43.75,low pain,smoker_daily or sometimes,"rarely, very little and never lift",27.58,low sit,low sit
+16071,56,male,144,27.96,7.06,31.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",47.77,high sit,moderate sit
+16072,38,male,22,22.39,4.93,37.50,low pain,non smokers,"rarely, very little and never lift",29.21,low sit,low sit
+16073,48,females,48,17.42,7.07,6.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",45.07,moderate sit,moderate sit
+16087,41,females,146,24.39,4.96,43.75,low pain,non smokers,"rarely, very little and never lift",28.73,low sit,low sit
+16093,40,females,48,23.75,3.38,18.75,low pain,non smokers,moderate 1/4 lift,20.17,low sit,low sit
+16095,25,male,96,27.26,4.51,18.75,low pain,non smokers,moderate 1/4 lift,28.12,low sit,low sit
+16101,47,male,6,24.52,6.01,50.00,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",35.37,low sit,low sit
+16103,62,male,71,26.11,4.20,37.50,low pain,smoker_daily or sometimes,moderate 1/4 lift,26.47,low sit,low sit
+16104,48,male,72,21.19,5.92,43.75,low pain,smoker_daily or sometimes,moderate 1/4 lift,32.95,low sit,low sit
+16107,45,male,69,26.24,7.25,18.75,low pain,non smokers,"rarely, very little and never lift",41.86,moderate sit,moderate sit
+16109,61,male,540,25.56,4.43,12.50,high pain,non smokers,"rarely, very little and never lift",27.96,low sit,low sit
+16111,39,male,51,31.37,5.16,37.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",31.63,low sit,low sit
+16113,50,male,,28.70,3.44,81.25,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",23.79,low sit,low sit
+16115,27,male,48,25.45,2.48,0.00,low pain,non smokers,moderate 1/4 lift,17.70,low sit,low sit
+17001,46,male,70,23.36,6.25,31.25,low pain,smoker_daily or sometimes,moderate 1/4 lift,43.79,moderate sit,low sit
+17002,38,females,,21.99,5.37,37.50,low pain,,"high all the time 3/4 time, and ½ of the time",39.81,moderate sit,low sit
+17004,39,male,180,21.65,8.14,31.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",48.58,high sit,moderate sit
+17007,34,male,142,21.05,8.05,31.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",48.24,high sit,moderate sit
+17008,43,male,240,25.59,6.38,31.25,high pain,non smokers,"high all the time 3/4 time, and ½ of the time",42.99,moderate sit,low sit
+17009,56,females,298,23.20,7.58,18.75,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",44.19,moderate sit,moderate sit
+17010,51,females,216,25.61,7.00,56.25,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",47.72,moderate sit,moderate sit
+17011,41,females,88,21.83,7.69,25.00,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",46.89,moderate sit,moderate sit
+17013,40,females,,21.74,8.74,37.50,low pain,,"high all the time 3/4 time, and ½ of the time",53.93,high sit,high sit
+17014,26,females,,21.74,7.00,18.75,low pain,,"rarely, very little and never lift",39.85,moderate sit,moderate sit
+17016,46,male,134,33.35,7.08,25.00,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",46.25,moderate sit,moderate sit
+17017,44,females,132,20.63,8.63,25.00,high pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",60.42,high sit,high sit
+17018,42,females,64,18.65,9.30,18.75,low pain,smoker_daily or sometimes,moderate 1/4 lift,58.14,high sit,high sit
+17019,46,females,52,31.07,9.04,0.00,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",64.14,high sit,high sit
+17020,35,females,24,19.34,7.78,37.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",45.36,moderate sit,moderate sit
+17024,37,females,144,19.63,8.11,37.50,low pain,smoker_daily or sometimes,"high all the time 3/4 time, and ½ of the time",50.78,high sit,moderate sit
+17025,53,females,51,28.31,7.22,62.50,low pain,non smokers,"high all the time 3/4 time, and ½ of the time",53.98,high sit,moderate sit
