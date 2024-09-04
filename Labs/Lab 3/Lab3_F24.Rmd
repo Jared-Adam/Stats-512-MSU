@@ -1,0 +1,226 @@
+---
+title: "Lab 3"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: Samanthi Wijerathna, Rubey Berkenkamp
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(readr)
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(mosaic)
+library(betareg)
+library(gtsummary)
+library(patchwork)
+library(effects)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+#remotes::install_github("greenwood-stat/ggResidpanel")
+#library(ggResidpanel)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# Lab 3 Instructions:
+
+Working in a group of 2, 3, or 4 people, complete the following questions. Turn in a single *PDF* _from your word document_ for the group _with all group member names on it_ after knitting this document with your answers "in-line" (after the questions). 
+
+## White matter lesions (continued):
+
+
+```{r}
+bpdata <- read_csv("bipolardata.csv")
+```
+
+
+```{r}
+ library(tidyverse)
+
+bpdata <- bpdata %>% dplyr::rename(IllnessDuration = 'Illness duration',
+                                   NormVolume = 'nWML_sum',
+                                   SubDep = 'substance dependancy',
+                                   AlcDep = 'alcohol dependancy',
+                                   AnxDis = 'anxiety disorder',
+                                   smoking = 'smoking_yes_no') %>% 
+      mutate(group = factor(group),
+             sex = factor(sex),
+             YMRS = factor(YMRS),
+             DM = factor(DM),
+             smoking = factor(smoking),
+             HYPERT = factor(HYPERT),
+             group = fct_recode(group, 
+                                patient = "1", 
+                                HC = "2"),
+             sex = fct_recode(sex, 
+                              male = "1",
+                              female = "2"),
+             smoking = fct_recode(smoking,
+                                  no = "0",
+                                  yes = "1"),
+             IllnessDurBin = forcats::fct_explicit_na(cut_number(IllnessDuration, n = 2))
+             )
+```
+
+
+```{r}
+?fct_explicit_na # gives missing values a factor level
+?cut_number # balances observations between these two groups
+
+```
+
+
+```{r}
+favstats(IllnessDuration ~ group, data = bpdata)
+favstats(IllnessDuration ~ IllnessDurBin, data = bpdata)
+```
+
+
+1) Illness duration is a complicated variable because it is always missing for healthy subjects (see `favstats` result above), which is a systematic or structural missingness pattern due to the definition of the variable. The previous code creates a new variable called `IllnessDurBin`. Explain the levels of the new variable and discuss how many observations are in each level.
+
+**The new variables has split the 100 patient observations into two bins that are roughly balanced in number of observations. The above code applies missing values as a factor level and then balances the illness duration into n = 2 bins, thus roughly balancing the illness groups with the missing/ healthy group.**
+
+
+2) While those levels are fairly explicit, they will be awkward to discuss and use. Use `fct_recode` to improve the names of the levels of `IllnessDurBin` with text labels for each level related to what each category is. When we rename levels, the levels now might not follow the alphabetical convention in R. What is the order of your new levels and does this differ from the typical alphabetical convention that R uses?
+
+**It is numerical, but we assigned new names.**
+
+```{r}
+levels(bpdata$IllnessDurBin)
+?fct_recode
+
+bpdata <- bpdata %>% 
+  dplyr::mutate(IllnessDurBin = fct_recode(IllnessDurBin, 
+                            short = "[1,16]",
+                           long = "(16,60]",
+                           healthy = "(Missing)"))
+levels(bpdata$IllnessDurBin)
+```
+
+
+3) Eventually we will go through our diagnostics on the models with `NormVolume`, but it seems like we might need to consider the same transformation the author's used (log-transforming it). Why is the `favstats` as used below important to do prior to log-transforming a variable?
+
+**We need to understand the distribution of the raw data. Looking at numerical spread of a log transformed variable is too hard to interpret.**
+
+
+
+```{r}
+favstats(NormVolume ~ 1, data = bpdata)
+bpdata <- bpdata %>% mutate(logNormVolume = log(NormVolume))
+
+```
+
+
+
+4) Make plots of the `NormVolume` and `logNormVolume` versus the `IllnessDurBin` and "patch" the two plots together using the `patchwork` package with tagging using `plot_annotation(tag_levels = "a")`. No discussion and you don't need to improve the axis labels or title this time.
+
+
+```{r fig.width = 8, fig.height = 6}
+p1 <- ggplot(bpdata, aes(IllnessDurBin, NormVolume))+
+  geom_point()+
+  geom_violin()
+  
+  
+p2 <- ggplot(bpdata, aes(IllnessDurBin ,logNormVolume))+
+  geom_point()+
+  geom_violin()
+
+
+p1 + p2 + plot_annotation(tag_levels = 'a')
+
+```
+
+5) Fit a linear model for `logNormVolume` with `IllnessDurBin` as the only predictor, generate model summaries with `summary` and `tbl_regression` (making sure the intercept is included) and an effects plot. No discussion.
+
+```{r}
+m1 <- lm(logNormVolume ~ IllnessDurBin, data = bpdata)
+summary(m1)
+tbl_regression(m1)
+plot(allEffects(m1), grid = T)
+```
+
+
+6) Write out the estimated model, defining the indicator variable**s** you used.
+
+* $\hat{\mu}\{logNormVolume|IllnessDurBin\} = -.153 + 0.38 I_{Illness = Long} -0.29 I_{Illness = Healthy} $ 
+
+
+* where $I_{Illness = Long}$ When a subject had a long illness duration is 1 and 0 otherwise. 
+* where $I_{Ilness = Healthy}$ when a subject was healthy is 1 and 0 otherwise. 
+
+
+7) Make a plot of the `logNormVolume` based on `age1` faceted by `IllnessDurBin`. Add both linear and nonparametric smoothing lines (this hint will be removed into the future with this sort of plot and is just an assumption that you try to add these lines and only remove if you have some reason). Discuss the potential for and pattern of an interaction based on the plot.
+
+```{r fig.width = 8, fig.height = 5}
+ggplot(bpdata, aes(age1, logNormVolume))+
+  geom_point()+
+  facet_wrap(~IllnessDurBin)+
+  geom_smooth(se = F, lty = 2, col = 'red')+
+  geom_smooth(method = 'lm')
+
+
+```
+**There is a potential for an interaction because the slopes for logNormVolume are different among illness duration facets based on age group.**
+
+
+
+8) Fit the interaction model that relates to the previous plot, a model `summary`, and generate an effects plot. Report the estimated intercept and `age1` slope for a healthy subject (no illness) and one in the lower illness duration group, showing your work for the calculations. You do not need to write out the estimated model (for time purposes).
+
+* Estimated model : $\hat{\mu}\{logNormVolume|IllnessDurBin*Age\} = -2.07 -0.71 I_{Illness = Long} -0.655 I_{Illness = Healthy} +0.014 I_{Age} + 0.018 I_{Age*Illness = Long} + 0.007 I_{Age*Illness = Healthy} $ 
+
+* Off: $\hat{\mu}\{logNormVolume|IllnessDurBin = Short*Age\} = -2.07 + 0.014 I_{Age} $ 
+
+* Estimated intercept for lower illness duration group:  -2.074873 
+
+* Estimated age slope for lower illness duration group:  -2.074873 + 0.014099 = -2.061
+
+* Estimated intercept for healthy group: -0.655589
+
+* Estimated age slope for healthy group:  0.007988
+
+
+
+```{r}
+m2 <- lm(logNormVolume ~ IllnessDurBin*age1, data = bpdata)
+summary(m2)
+plot(allEffects(m2), grid = T)
+#                            Estimate Std. Error t value Pr(>|t|)
+# (Intercept)               -2.074873   0.227808  -9.108 5.39e-16
+# IllnessDurBinlong         -0.707779   0.374645  -1.889   0.0608
+# IllnessDurBinhealthy      -0.655589   0.297669  -2.202   0.0292
+# age1                       0.014099   0.005670   2.487   0.0140
+# IllnessDurBinlong:age1     0.018022   0.008031   2.244   0.0263
+# IllnessDurBinhealthy:age1  0.007988   0.007181   1.112   0.2678
+
+# Double checking the math above for the short model 
+m3 <- lm(logNormVolume ~ IllnessDurBin*age1, data = bpdata %>% 
+           mutate(IllnessDurBin = relevel(IllnessDurBin, 'long')))
+summary(m3)
+
+#                            Estimate Std. Error t value Pr(>|t|)
+# (Intercept)               -2.782652   0.297426  -9.356  < 2e-16
+# IllnessDurBinshort         0.707779   0.374645   1.889   0.0608
+# IllnessDurBinhealthy       0.052190   0.353797   0.148   0.8829
+# age1                       0.032121   0.005687   5.648 8.06e-08
+# IllnessDurBinshort:age1   -0.018022   0.008031  -2.244   0.0263
+# IllnessDurBinhealthy:age1 -0.010034   0.007194  -1.395   0.1651
+
+```
+
+
+
+9) (One last time!): It's useful to record some information about the version of R you are using. When you `Knit` this documentation, it will report on the version of R that you are using. It should say 4.4.1 in your compiled word document:
+
+  * R version (short form): `r getRversion()`
+
+
+10) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question.
