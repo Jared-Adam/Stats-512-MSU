@@ -1,0 +1,112 @@
+---
+title: "STAT X12 HW 2"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: "Due Sept 11 at 9 am"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(remotes)
+library(gtsummary)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/ggResidpanel")
+#library(ggResidpanel)
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+library(mosaic)
+library(effects)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# HW 2 Instructions:
+
+This is a self-organized group homework (groups of size 2, 3, or 4). You must find a partner for this assignment for it to be graded. If you are having trouble finding a group, post in the Water Cooler channel in MS Teams and maybe you can find a group to join or someone else who isn't in a group.
+
+At the end of the assignment you will document any discussions that have a substantive impact on your results. 
+
+Make sure you check the knitted version of your answers for errors. We will only grade what we can see.
+
+## Back pain and sitting or sitting and back pain? (continued)
+
+*-* Gupta, N., Christiansen, C., Hallman, D., Korshoj, M., Carneiro, I., and Holtermann, A. (2015) Is Objectively Measured Sitting Time Associated with Low Back Pain? A Cross-Sectional Investigation in the NOMAD study. _PLoS ONE_ 10(3): e0121159. doi:10.1371/journal.pone.0121159
+
+
+```{r, warning=F, message=F}
+gupta_2015 <- read_csv("gupta_2015_sheet1.csv")
+g2 <- gupta_2015 %>% dplyr::rename_all(list(~make.names(., unique=T)))
+g2 <- g2 %>% dplyr::rename(age = 'age.in.years',
+                           seniority = 'job.seniority.in.months',
+                           BMI = 'body.mass.index.in.kg.m2',
+                           influence = 'Influence.at.work.in.0.100.',
+                           LBP = 'low.back.pain.categories',
+                           smoking = 'smoking.status.categories',
+                           sittime = 'total.sitting.time.in.hours',
+                           occlift = 'occupational.lifting.carrying.time.categories',
+                          sittimepercent ='total.sitting.time.as.percentage.of.the.mean.measured.time.per.day',
+                          sittimepercent_cat = 'categories.of.the.percent.total.sitting.time',
+                          sittimehours_cat = 'categories.of.the.total.sitting.time.in.hours') %>% 
+                    mutate(sex = factor(sex),
+                           LBP = factor(LBP),
+                           smoking = factor(smoking),
+                           occlift = factor(occlift),
+                           sittimepercent_cat = factor(sittimepercent_cat),
+                           sittimehours_cat = factor(sittimehours_cat),
+                           occlift = fct_recode(occlift,
+                                                high = 'high all the time 3/4 time, and \xbd of the time',
+                                                moderate = 'moderate 1/4 lift',
+                                                rarely = 'rarely, very little and never lift')
+                    )  
+lm1 <- lm(sittime ~ LBP + age + sex + smoking + BMI, data = g2)
+summary(lm1)
+
+lm1 %>% tbl_regression(intercept = T)
+
+```
+
+1) In HW 1, we discovered that there are some missing values impacting `lm1` to make the sample size go from 201 to 190. You should never fit a model that has missing values on the predictors or response that are being used in a model as we did for `lm1`. You should always clean the data set for a particular model prior to fitting it and make sure the data set is not changing across models if you want to directly compare any results (same y's) because R will delete any rows with missing values _on variables used in a model_.  We can use the `drop_na` function from `tidyr` to globally or strategically remove rows with missing values. Explain the differences in the resulting data sets for `g2a` and `g2b`.
+
+
+```{r}
+g2a <- g2 %>% drop_na()
+g2b <- g2 %>% drop_na(smoking)
+g2c <- g2 %>% drop_na(smoking, seniority)
+
+```
+
+2) Clean the data set specific to the variables used in `lm1` above and re-fit the model and generate a model `summary` and the `tbl_regression(intercept = T)` version of a model summary and an effects plot. No discussion, just code and output.
+
+```{r fig.height = 8, fig.width = 8}
+
+```
+
+
+3) Write out the theoretical model you are fitting in the previous model using Sleuth notation, making sure you carefully use the notation and define any indicator variables you use (these hints will eventually disappear but the need to do both will not). Note that you had code for starting this in the last lab.
+
+
+4) Write out the estimated model for $\hat{\mu}$ using your output above. If you re-use notation from the previous question, you do not need to define it.
+
+
+5) Use the estimated model to generate a prediction "by-hand" for a low pain LBP, 40 year old, male, who does not smoke, and has a BMI of 30. Show your work (so type out what you are trying to do). Do not use the `predict` function for your answer but you can try to use it to check your work if you want to try it.
+
+
+6) Read the study design carefully in the paper. Discuss the independence assumption for the previous model.
+
+
+7) Write the SOI for this data set, making sure to carefully address both generalizability and causation, and to consider the information they provide in Figure 1. Also remember to note the location/time of the study when discussing generalizability.
+
+
+8) Total sitting time was the average per day for each valid day measured for each subject (so one value per subject), so is missing a "per day" in its units. In their exclusion criteria, what sort of impacts on the results for sitting time measurements might occur due to their choices?
+
+
+9) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.
+

@@ -73,8 +73,8 @@ bpdata <- bpdata %>% dplyr::rename(IllnessDuration = 'Illness duration',
 
 
 ```{r}
-?fct_explicit_na # gives missing values a factor level
-?cut_number # balances observations between these two groups
+#?fct_explicit_na # gives missing values a factor level
+#?cut_number # balances observations between these two groups
 
 ```
 
@@ -151,11 +151,18 @@ plot(allEffects(m1), grid = T)
 
 6) Write out the estimated model, defining the indicator variable**s** you used.
 
-* $\hat{\mu}\{logNormVolume|IllnessDurBin\} = -.153 + 0.38 I_{Illness = Long} -0.29 I_{Illness = Healthy} $ 
+$$\hat{\mu}\{logNormVolume|IllnessDurBin\} = -.153 + 0.38 I_{Illness = Long} -0.29 I_{Illness = Healthy} $$
 
 
-* where $I_{Illness = Long}$ When a subject had a long illness duration is 1 and 0 otherwise. 
-* where $I_{Ilness = Healthy}$ when a subject was healthy is 1 and 0 otherwise. 
+* where 
+
+$$I_{Illness = Long}$$ 
+when a subject had a long illness duration is 1 and 0 otherwise. 
+
+* where 
+
+$$I_{Ilness = Healthy}$$
+when a subject was healthy is 1 and 0 otherwise. 
 
 
 7) Make a plot of the `logNormVolume` based on `age1` faceted by `IllnessDurBin`. Add both linear and nonparametric smoothing lines (this hint will be removed into the future with this sort of plot and is just an assumption that you try to add these lines and only remove if you have some reason). Discuss the potential for and pattern of an interaction based on the plot.
@@ -175,17 +182,34 @@ ggplot(bpdata, aes(age1, logNormVolume))+
 
 8) Fit the interaction model that relates to the previous plot, a model `summary`, and generate an effects plot. Report the estimated intercept and `age1` slope for a healthy subject (no illness) and one in the lower illness duration group, showing your work for the calculations. You do not need to write out the estimated model (for time purposes).
 
-* Estimated model : $\hat{\mu}\{logNormVolume|IllnessDurBin*Age\} = -2.07 -0.71 I_{Illness = Long} -0.655 I_{Illness = Healthy} +0.014 I_{Age} + 0.018 I_{Age*Illness = Long} + 0.007 I_{Age*Illness = Healthy} $ 
+* Full model : 
 
-* Off: $\hat{\mu}\{logNormVolume|IllnessDurBin = Short*Age\} = -2.07 + 0.014 I_{Age} $ 
+$$\hat{\mu}\{logNormVolume|IllnessDurBin*Age\} = -2.07 -0.71 I_{Illness = Long} -0.66 I_{Illness = Healthy} +0.014Age + 0.018 I_{Illness = Long}*Age + 0.008 I_{Illness = Healthy}*Age $$
 
-* Estimated intercept for lower illness duration group:  -2.074873 
+* Lower Illness duration group: 
 
-* Estimated age slope for lower illness duration group:  -2.074873 + 0.014099 = -2.061
+$$\hat{\mu}\{logNormVolume|IllnessDurBin = Short*Age\} -2.07 -0.71I_{Illness = Long}*0 -0.66I_{Illness = Healthy}*0 +0.014 Age + 0.018 I_{Illness = Long}*0*Age + 0.008I_{Illness = Healthy}*0*Age $$
 
-* Estimated intercept for healthy group: -0.655589
+$$ = -2.07 + 0.014Age $$ 
 
-* Estimated age slope for healthy group:  0.007988
+* Equation for healthy group:
+
+$$ = -2.07 -0.71*0  - 0.66I_{Illness = Healthy}*1 +0.014Age + 0.008I_{Illness = Healthy}*1*Age $$
+
+$$ = (-2.07 - 0.66) + (0.014 + 0.008) $$
+Combining like terms of intercept estimate and healthy estimate and combining like terms of turned on age components (age and age of healthy). 
+
+$$ = -2.73 + 0.022$$
+ 
+
+
+* Estimated intercept for lower illness duration group:  -2.07 
+
+* Estimated age slope for lower illness duration group:  0.014
+
+* Estimated intercept for healthy group: -2.73
+
+* Estimated age slope for healthy group: 0.022
 
 
 
@@ -193,26 +217,7 @@ ggplot(bpdata, aes(age1, logNormVolume))+
 m2 <- lm(logNormVolume ~ IllnessDurBin*age1, data = bpdata)
 summary(m2)
 plot(allEffects(m2), grid = T)
-#                            Estimate Std. Error t value Pr(>|t|)
-# (Intercept)               -2.074873   0.227808  -9.108 5.39e-16
-# IllnessDurBinlong         -0.707779   0.374645  -1.889   0.0608
-# IllnessDurBinhealthy      -0.655589   0.297669  -2.202   0.0292
-# age1                       0.014099   0.005670   2.487   0.0140
-# IllnessDurBinlong:age1     0.018022   0.008031   2.244   0.0263
-# IllnessDurBinhealthy:age1  0.007988   0.007181   1.112   0.2678
 
-# Double checking the math above for the short model 
-m3 <- lm(logNormVolume ~ IllnessDurBin*age1, data = bpdata %>% 
-           mutate(IllnessDurBin = relevel(IllnessDurBin, 'long')))
-summary(m3)
-
-#                            Estimate Std. Error t value Pr(>|t|)
-# (Intercept)               -2.782652   0.297426  -9.356  < 2e-16
-# IllnessDurBinshort         0.707779   0.374645   1.889   0.0608
-# IllnessDurBinhealthy       0.052190   0.353797   0.148   0.8829
-# age1                       0.032121   0.005687   5.648 8.06e-08
-# IllnessDurBinshort:age1   -0.018022   0.008031  -2.244   0.0263
-# IllnessDurBinhealthy:age1 -0.010034   0.007194  -1.395   0.1651
 
 ```
 
