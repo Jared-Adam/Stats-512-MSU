@@ -77,36 +77,65 @@ lm1 %>% tbl_regression(intercept = T)
 
 
 ```{r}
+?drop_na
 g2a <- g2 %>% drop_na()
 g2b <- g2 %>% drop_na(smoking)
 g2c <- g2 %>% drop_na(smoking, seniority)
 
 ```
 
+*g2a with drop_na()* removes all rows of data with missing values in them. There is no location specification to this command line. **The final n = 185.**
+*g2b with drop_na(smoking)* removes all rows of missing data based on the smoking column. If there are additional missing values, they are ignored since smoking is the location specification to this command. **The final n = 190.** The key differences between these two data sets are that the df increased in size because we specified a column that does not include all of the missing data in this df. 
+*g2c with drop_na(smoking, seniority)* removes all rows of missing data based on the smoking and seniority columns. **The final n = 186.**
+
+
 2) Clean the data set specific to the variables used in `lm1` above and re-fit the model and generate a model `summary` and the `tbl_regression(intercept = T)` version of a model summary and an effects plot. No discussion, just code and output.
 
 ```{r fig.height = 8, fig.width = 8}
+g3 <- g2 %>% 
+  drop_na(sittime, LBP, age, sex, smoking, BMI)
+
+lm2 <- lm(sittime ~ LBP + age + sex + smoking + BMI, data = g3)
+summary(lm2)
+lm2 %>% tbl_regression(intercept = T)
+
+plot(allEffects(lm2))
 
 ```
 
 
 3) Write out the theoretical model you are fitting in the previous model using Sleuth notation, making sure you carefully use the notation and define any indicator variables you use (these hints will eventually disappear but the need to do both will not). Note that you had code for starting this in the last lab.
 
+$$\hat{\mu}\{sittime|LBP,age,sex,smoking,BMI\} = \beta_{0} + \beta_{1}_I_{LBP = low pain} + \beta_{2}(age) + \beta_{3}_I_{Sex = male} + \beta_{4}_I_{Smoking = yes} + \beta_{5}(BMI)$$
+*Where $$I_{LBP = low pain}$$ when a subject has low pain is 1 or 0 otherwise.
+
+*Where $$I_{Sex = Male}$$ when a subject is male is 1 or 0 otherwise. 
+
+*Where $$I_{Smoking = Yes}$$ when a subject smokes daily or sometimes (yes) is 1 or 0 otherwise. 
 
 4) Write out the estimated model for $\hat{\mu}$ using your output above. If you re-use notation from the previous question, you do not need to define it.
 
+$$\hat{\mu}\{sittime|LBP,age,sex,smoking,BMI\} = 5.66 -1.43\cdot I_{LBP = low pain} + 0.02\cdot (age) + 0.44\cdot I_{Sex = male} + 0.43\cdot I_{Smoking = yes} + 0.05\cdot (BMI)$$
 
 5) Use the estimated model to generate a prediction "by-hand" for a low pain LBP, 40 year old, male, who does not smoke, and has a BMI of 30. Show your work (so type out what you are trying to do). Do not use the `predict` function for your answer but you can try to use it to check your work if you want to try it.
 
+This model is for LBP = low(on), age = 40, smoking = off and BMI = 30
+
+$$\hat{\mu}\{sittime|LBP,age,sex,smoking,BMI\} = 5.66 (-1.43\cdot 1)+ (0.02\cdot (40)) + (0.44\cdot 1) + (0.43\cdot 0) + (0.05\cdot (30))$$
+$$ = 5.66 - 1.43 + 0.44 + (0.02\cdot40) + (0.05\cdot 30)$$
+$$ = 4.67 + 0.8 + 1.5$$
+$$ = 6.97$$ hours per day of sitting time
+
+
 
 6) Read the study design carefully in the paper. Discuss the independence assumption for the previous model.
-
+**The independence assumption refers to no values or responses being influenced by any other. The participants of this study were chosen from one of seven possible trades. The response of sitting time could be directly correlated to these types or there could be a result of clustering of responses in observations. The sampling occurred over a four-day period and participants were required to work at least 20 hours a week. It is possible that some participants worked less time than others, which could result in misleading results.**
 
 7) Write the SOI for this data set, making sure to carefully address both generalizability and causation, and to consider the information they provide in Figure 1. Also remember to note the location/time of the study when discussing generalizability.
-
+**This study aims to link an objective measure of sitting time with lower-back pain intensity among blue collar workers (minimum of 20 hours/week) in Denmark from seven workplaces (i.e., construction workers, cleaners, garbage collectors, manufacturing workers, assembly workers, mobile plant operations and health care service workers). Subjects of this were recruited through their unions, and thus not randomly selected from a population. Additionally, this was an observational study and subjects were not assigned with random values of the covariates in question, and thus we can conclude that ther is an assocation between them and average sitting time per day. The inference of these results extend only to those within the study and attempting generalized inference across all blue collar workplaces is not possible.**
 
 8) Total sitting time was the average per day for each valid day measured for each subject (so one value per subject), so is missing a "per day" in its units. In their exclusion criteria, what sort of impacts on the results for sitting time measurements might occur due to their choices?
-
+**The authors excluded those working less <20 hours per week and sampled across a four-day period. The <20 hour workweek introduces potential for misleading results as a result of out-of-work habits (e.g., sitting more or less on days off). Additionally, the job type may greatly influence sitting time (e.g., a worker that operates equipment may sit their entire shift, but not in their personal time. Lastly, out of work habits may influence the average sitting time for employees that are not working the same number of hours per week. For example,  a subject that works two days but sits more on their days off may yield a higher average of sitting time than someone who worked the fours days, although their habits are similar.**
 
 9) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.
 
