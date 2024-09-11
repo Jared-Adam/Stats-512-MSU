@@ -1,0 +1,103 @@
+---
+title: "512 Project Part I"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: "Due Sept 27"
+author: "Jared Adam"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(mosaic)
+library(ggResidpanel)
+library(catstats2)
+library(effects)
+library(gtsummary)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# Part I (512 only, project proposal, 25 pts): 
+
+1) Read in your data set and run `dim` on it:
+
+```{r}
+
+
+```
+
+
+2) Prepare a short description of your data set (source if published paper exists), especially providing the study design, sample size, and variables of primary interest. If there is random sampling, note the population sampled from. If there is random assignment, note how and for which variable(s).
+
+Data: Sentinel Prey assessment of arthropod-predator activity in corn fields. 
+
+These data come from the Precision Sustainable Agriculture effort through the USDA. I am the lead on the entomology component of this project and responsible for analyzing this three year data set which spans multiple states. This effort began during my Master's degree, but I only analyzed Pennsylvania data for my thesis. 
+
+**Study design: **
+**Treatments** = 4; No cover crop, early-terminated cover crop, late-terminated cover crop, planting green
+**Plots** = 20; 5 blocks composed of 4 plots each = 20 plots / study site / year
+**Years** = 3 (2021,2022,2023)
+**Locations** = This project comprises 16 states. Not all states collected sentinel prey data every year. 
+**Effort** = Data were collected at three corn growth stages / year (V3,V5,R3).
+**Sample** = 6 sentinel prey traps were placed in each plot = 120 samples collected / growth stage. Total sample effort per state per season = 360 samples. 
+
+**Variables:**
+**Response** = Total level of predation. This is transformed into a proportion over a constant total. Binomial response
+**Explanatory** = Crop growth stage (timing, three levels) and treatment (four levels). 
+**Random effects** = Block and location? I am unsure how to use location. I am not interested in seeing how each state differs in the analysis because that is *not* a research question. I plan to go through and conduct each state's own analysis later.
+**Repeated measure** = I visit the same trap three times throughout the year. This feels like a term I should identify. If I were to choose, I would select *growth stage*. 
+
+Plots were randomly assigned to each block. Field sites were as random as they could be at each respective research station. Sentinel prey traps were placed between pre-determined rows and at specific length intervals within each plot to maintain consistency. 
+
+3) Make a `missing_data.frame` plot of your data set and explain any missing values indicated:
+
+```{r}
+library(mi)
+#tdf <- missing_data.frame(data.frame(mydatasetname))
+#image(tdf)
+
+```
+
+
+
+4) Discuss any other use in classes or theses for the data - either that you have used it for or are currently working on for future submissions.
+
+I am working on this for a publication. 
+
+5) Provide at least one display of the data, focusing on the response of interest versus a predictor. If you have multiple predictors, try to plot the response versus those too.
+
+```{r}
+
+
+```
+
+
+6) Provide an initial model you hope to fit (does not need to be fit). If you fit a model, add a model summary and effects plot.
+
+```{r}
+
+
+```
+
+7) Start to work on a Table 1 that summarizes variables of interest, possibly by groups of interest. At a minimum, summarize the response variable, by a grouping variable if one exists. 
+
+```{r}
+
+
+```
+
+
+8) Provide the names of feedback group members and the date, time, and location of your feedback session interaction.
+
+
+
+Graded for completion/not but there are points for participation in a feedback session. Note that 412 students get full credit for this.
