@@ -100,16 +100,23 @@ g3 <- g2R %>% drop_na(occlift, influence) #Use for questions 3 to 8
 
 
 g3 <- g3 %>% 
-  mutate(likert_scale = case_when(influence == 0 ~ '0',
+  mutate(likert_scale = case_when(influence == 0 ~ 0,
                                   influence >= 1 & influence <= 25.00 ~ 1,
                                   influence >= 25.01 & influence <= 50.00  ~ 2,
                                   influence >= 50.01 & influence <= 75.00 ~ 3,
                                   influence >=75.01 & influence <= 99.99 ~ 4,
-                                  influence == 100.00 ~ '5'))
+                                  influence == 100 ~ 5))
+print(g3$likert_scale)
 
-enhanced_stripchart()
+?enhanced_stripchart
+enhanced_stripchart(g3, sittime~likert_scale)+
+                    labs(title = 'Sit Time ~ Likert Scale',  
+                         x = 'Likert scale 0-5',
+                         y = 'Total sit time')
 
 ```
+**Based on the enhanced strip chart, it appears that the the average total sit time is similar among all likert scale values. There are many more observations between likert scale 1-3 than the others. It is apparent that there are fewer observations of 0, 4, and 5, which can be seen by the fewer number of dots and the spread of the error. When investigating likert scale values of 5, many of these higher ranking employees may be considered white-collar, and thus did not report sitting time.**
+
 
 
 4) The occupational lift variable (`occlift`) is discussed as "The self-reported information
@@ -118,37 +125,70 @@ How much of your working time do you spend carrying or lifting things? with six 
 categories summarized into three groups; high lifting/carrying time (almost all the time, approximately 3/4 of the time, and 1/2 of the time), moderate lifting/carrying time (1/4 of the time) and low lifting/carrying time (rarely/very little and never)." Plot sitting time versus lifting categories (improve x and y-axis labels in the plot) and generate an F-test for the null hypothesis of no difference in the true mean sitting time across the lift categories. Report the test statistic, distribution under the null hypothesis, and p-value. No "evidence" sentence or discussion needed, just those test details. 
 
 ```{r}
+is.factor(g3$occlift)
+unique(g3$occlift)
+
+enhanced_stripchart(g3, sittime~occlift)
+
+lm1 <- lm(sittime ~ occlift, data = g3)
+summary(lm1)
+
+anova(lm1)
 
 
 ```
-
+**F(2, 186) = 0.015, P-value = 0.985**
 
 
 5) Facet the previous plot of sitting time versus your new version of influence based on the lift categories. Discuss the relationships displayed and the potential for an interaction between influence and lift categories _on the sitting time_. How could you explain the result based on the variables being measured?
 
 ```{r}
+# I could not get the strip chart to facet
+# enhanced_stripchart(sittime ~ likert_scale, data = g3)+
+#   facet_wrap(~occlift)
+
+ggplot(g3, aes(y = sittime, x = likert_scale))+
+  geom_violin()+
+  geom_point()+
+  facet_wrap(~occlift)+
+  labs(title = 'Sit time ~ Likert scale x lifting frequency')
+  
 
 ```
-
+**It is hard to tease out a trend in the potential interaction based on this figure. It looks like the spread of observations is greater in the rarely lifting category than the other two. However, for all three lifting categories, it appears that the likert scale-2 value has the most observations while 0 has the fewest. Based on the violins, there appears to be a trend of similar sitting time values across all three lifting frequency categories.**
 
 6) Fit the interaction model with your new version of the influence variable and occupation lifting, run a model summary, generate two versions of the effects plot (regular version with "faceted" panels and a multiline version that overlays the lines with CI bands and different line types), and write out the estimated model (define any indicators used).
 
 ```{r}
+lm2 <- lm(sittime ~ likert_scale*occlift, data = g3)
+summary(lm2)
+
+plot(allEffects(lm2))
+plot(allEffects(lm2), multiline = T, grid = T, confint = list(style = 'auto'), lty = 1:3)
 
 ```
 
-* $\hat{\mu}\{sittime|influence\ast occlift\}$
+**Predicated**
 
+* $\hat{\mu}\{sittime|influence\ast occlift\} = \beta_{0} + \beta_{1}(likertscale) + \beta_{2}I_{Occlift=moderate} + \beta_{3}I_{Occlift=rarely} + \beta_{4}(likertscale\cdot I_{Occlift = moderate} + \beta_{5}(likertscale\cdot I_{Occlift = rarely})$
 
+**Estimated**
 
+* $\hat{\mu}\{sittime|influence\ast occlift\} = 6.99 + 0.14 (-1.76\cdot1) + (0.58\cdot1) + (0.87\cdot1) (-0.29\cdot 1)$
 
 7) Report simplified versions of the model for each of the three levels of occupational lift, showing your work. 
 
-* For high: $\hat{\mu}\{sittime|influence\ast (occlift = high)\}$
+* For high: $\hat{\mu}\{sittime|influence\ast (occlift = high)\} = \beta_{0} + \beta_{1}(likertscale)$
+$ \hat{\mu}\{sittime|influence\ast (occlift = high)\} =  6.99 + 0.14$
+$ \hat{\mu}\{sittime|influence\ast (occlift = high)\} = 7.13$
 
-* For moderate: $\hat{\mu}\{sittime|influence\ast (occlift = moderate)\}$
+* For moderate: $\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = \beta_{0} + \beta_{1}(likertscale) + \beta_{2}I_{Occlift=moderate} + \beta_{4}(likertscale\cdot I_{Occlift = moderate} $
+$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 6.99 + 0.14 (-1.76\cdot 1) + (.86\cdot1)$
+$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 6.23 $
 
-* For rarely: $\hat{\mu}\{sittime|influence\ast (occlift = rarely)\}$
+* For rarely: $\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = \beta_{0} + \beta_{1}(likertscale) + \beta_{3}I_{Occlift=rarely} + \beta_{5}(likertscale\cdot I_{Occlift = rarely})$
+$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 6.99 + 0.14 + (0.58\cdot1) (-0.29\cdot1)$
+$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.42$
 
 
 8) Then report size (slope) interpretation**s** for `influence` for the `high` and `moderate` groups. You won't be able to add a CI to the interpretation for the `moderate` group (yet), but you can get one from the model for the `high` level.
