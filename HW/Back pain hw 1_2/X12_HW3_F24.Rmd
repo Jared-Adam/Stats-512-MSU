@@ -1,0 +1,203 @@
+---
+title: "STAT X12 HW 3"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: "Due Sept 20 at 11:59 pm"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(remotes)
+library(gtsummary)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/ggResidpanel")
+#library(ggResidpanel)
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+library(mosaic)
+library(effects)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# HW 3 Instructions:
+
+This is a self-organized group homework (groups of size 2, 3, or 4). You must find a partner for this assignment for it to be graded. If you are having trouble finding a group, post in the Water Cooler channel in MS Teams and maybe you can find a group to join or someone else who isn't in a group. You will get a bonus (TBD but between 1 and 2%) for combining with someone new for the homework (one new pairing within the group is enough). You will need to note the new combination in the final question to get the bonus.
+
+At the end of the assignment you will document any discussions that have a substantive impact on your results. 
+
+Make sure you check the knitted version of your answers for errors. We will only grade what we can see.
+
+## Back pain and sitting or sitting and back pain? (continued)
+
+*-* Gupta, N., Christiansen, C., Hallman, D., Korshoj, M., Carneiro, I., and Holtermann, A. (2015) Is Objectively Measured Sitting Time Associated with Low Back Pain? A Cross-Sectional Investigation in the NOMAD study. _PLoS ONE_ 10(3): e0121159. doi:10.1371/journal.pone.0121159
+
+
+```{r, warning=F, message=F}
+gupta_2015 <- read_csv("gupta_2015_sheet1.csv")
+g2 <- gupta_2015 %>% dplyr::rename_all(list(~make.names(., unique=T)))
+g2 <- g2 %>% dplyr::rename(age = 'age.in.years',
+                           seniority = 'job.seniority.in.months',
+                           BMI = 'body.mass.index.in.kg.m2',
+                           influence = 'Influence.at.work.in.0.100.',
+                           LBP = 'low.back.pain.categories',
+                           smoking = 'smoking.status.categories',
+                           sittime = 'total.sitting.time.in.hours',
+                           occlift = 'occupational.lifting.carrying.time.categories',
+                          sittimepercent ='total.sitting.time.as.percentage.of.the.mean.measured.time.per.day',
+                          sittimepercent_cat = 'categories.of.the.percent.total.sitting.time',
+                          sittimehours_cat = 'categories.of.the.total.sitting.time.in.hours') %>% 
+                    mutate(sex = factor(sex),
+                           LBP = factor(LBP),
+                           smoking = factor(smoking),
+                           occlift = factor(occlift),
+                           sittimepercent_cat = factor(sittimepercent_cat),
+                           sittimehours_cat = factor(sittimehours_cat),
+                           occlift = fct_recode(occlift,
+                                                high = 'high all the time 3/4 time, and \xbd of the time',
+                                                moderate = 'moderate 1/4 lift',
+                                                rarely = 'rarely, very little and never lift')
+                    )  
+
+g2R <- g2 %>% drop_na(sittime, LBP, age, sex, smoking, BMI)
+
+lm1A <- lm(sittime ~ LBP + age + sex + smoking + BMI, data = g2R)
+summary(lm1A)
+lm1A %>% tbl_regression(intercept = T)
+plot(allEffects(lm1A), grid = T)
+```
+
+1) Suppose that the researchers run the following code. What are the null and alternative hypotheses being assessed in the terms of the slope coefficients from the theoretical model: $\mu\{sittime|LBP, age, sex, smoking, BMI\} = \beta_0 + \beta_1I_{LBP = Low} + \beta_2age + \beta_3I_{sex = male} + \beta_4I_{smoking = daily} + \beta_5BMI$?
+
+* $H_0: \beta_1 = \beta_2 = \beta_3 = \beta_4 = \beta_5 = 0$ 
+
+* $H_A: \beta_1 = \beta_2 = \beta_3 = \beta_4 = \beta_5 \ne 0$
+
+```{r}
+lmR <- lm(sittime ~ LBP, data = g2R)
+anova(lmR, lm1A)
+```
+
+2) Write an evidence sentence for the previous result, making sure you include information on what you would do based on this result - would you go with the full or reduced model based on this result?
+
+**There is no evidence to reject the null hypothesis that we need to include the main effects of age, sex, smoking, and BMI for their impacts on the sittime~LBP model F(4, 184) = 1.951, P-value = 0.104.** 
+
+
+## Exploring occupational lifting and influence:
+
+3) The `influence` variable was described as "The influence at work (decision authority/latitude) of the workers was determined by the 4-item scale from the Copenhagen Psychosocial Questionnaire with Cronbach’s Alpha of 0.77. A sample item is “Do you have a large degree of influence concerning your work?”. The responses were scored on a Likert scale with response categories ranging from 0 (never) to 5 (always). A composite scale measuring influence at work was constructed by calculating the mean rating of all four items. For the analysis, this scale was recorded to 0–100 scale, whereby a larger score represented a higher degree of influence at work." It seems like it would be more meaningful to interpret this variable on the original 0 to 5 point scale than as a percentage (so its units would be "points"). Use `mutate` to create a new version of the variable in the data frame that rescales the variable to have a minimum of 0 and maximum of 5 in the `g3` data set created below. Then make a plot of the sitting time (it is still the response) versus the rescaled influence variable you created. Remember to label the x and y-axes in the plot. Discuss the strength and direction of the relationship based on the plot.
+
+```{r}
+g3 <- g2R %>% drop_na(occlift, influence) #Use for questions 3 to 8
+
+
+g3 <- g3 %>% 
+  mutate(likert_scale = case_when(influence == 0 ~ '0',
+                                  influence >= 1 & influence <= 25.00 ~ 1,
+                                  influence >= 25.01 & influence <= 50.00  ~ 2,
+                                  influence >= 50.01 & influence <= 75.00 ~ 3,
+                                  influence >=75.01 & influence <= 99.99 ~ 4,
+                                  influence == 100.00 ~ '5'))
+
+enhanced_stripchart()
+
+```
+
+
+4) The occupational lift variable (`occlift`) is discussed as "The self-reported information
+on total time spent on occupational carrying and lifting was collected using a question:
+How much of your working time do you spend carrying or lifting things? with six response
+categories summarized into three groups; high lifting/carrying time (almost all the time, approximately 3/4 of the time, and 1/2 of the time), moderate lifting/carrying time (1/4 of the time) and low lifting/carrying time (rarely/very little and never)." Plot sitting time versus lifting categories (improve x and y-axis labels in the plot) and generate an F-test for the null hypothesis of no difference in the true mean sitting time across the lift categories. Report the test statistic, distribution under the null hypothesis, and p-value. No "evidence" sentence or discussion needed, just those test details. 
+
+```{r}
+
+
+```
+
+
+
+5) Facet the previous plot of sitting time versus your new version of influence based on the lift categories. Discuss the relationships displayed and the potential for an interaction between influence and lift categories _on the sitting time_. How could you explain the result based on the variables being measured?
+
+```{r}
+
+```
+
+
+6) Fit the interaction model with your new version of the influence variable and occupation lifting, run a model summary, generate two versions of the effects plot (regular version with "faceted" panels and a multiline version that overlays the lines with CI bands and different line types), and write out the estimated model (define any indicators used).
+
+```{r}
+
+```
+
+* $\hat{\mu}\{sittime|influence\ast occlift\}$
+
+
+
+
+7) Report simplified versions of the model for each of the three levels of occupational lift, showing your work. 
+
+* For high: $\hat{\mu}\{sittime|influence\ast (occlift = high)\}$
+
+* For moderate: $\hat{\mu}\{sittime|influence\ast (occlift = moderate)\}$
+
+* For rarely: $\hat{\mu}\{sittime|influence\ast (occlift = rarely)\}$
+
+
+8) Then report size (slope) interpretation**s** for `influence` for the `high` and `moderate` groups. You won't be able to add a CI to the interpretation for the `moderate` group (yet), but you can get one from the model for the `high` level.
+
+
+```{r}
+
+
+```
+
+## Switching gears... LBP as a response instead of explanatory
+
+
+9) Make a plot of low back pain (`LBP`) as the response variable versus sitting time. Discuss the pattern in the relationship. You can use the entire data set (`g2`) of 201 observations for the data for this plot and related work that follows (this will match the "Crude" row in their Table 3 for the total sitting time).  Also use the default choice for the `bw` value (remove the specification to get this to happen). Remember to improve the x and y axes in the plot.
+
+```{r}
+
+
+```
+
+
+
+10) Fit an appropriate model with `LBP` as the response and total sitting time as the predictor. Make effects plots on the link and response scales. Compare the previous plot to the effects plot on the response scale to determine which of the two levels of `LBP` the function is treating as a "success". 
+
+```{r}
+
+
+```
+
+11) Sometimes we would like to have the other level as the success, so we can use `relevel` to switch the baseline level. The following code switches that to create an alternate version of `LBP` called `LBP2`. Refit the previous model with this new response and remake the effects plot on the response scale. No discussion.
+
+```{r}
+g2 <- g2 %>% mutate(LBP2 = relevel(LBP, "low pain"))
+
+
+```
+
+
+12) For both of your models, generate nice looking model summaries using `tbl_regression(exponentiate = T)`. This table provides $exp(\hat{\beta}_1)$ and its associated 95% CI. One of these results will closely match the result in Table 3 for the "Crude" result. What does that tell you about the "success" used in their model?
+
+
+```{r}
+
+
+
+```
+
+
+
+13) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.
+
+14) Document if there is a new partnering in this homework submission for a bonus. If none is noted, we will assume this is a pre-existing group.
