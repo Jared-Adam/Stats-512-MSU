@@ -7,19 +7,21 @@ output:
 date: "Due Sept 27"
 author: "Jared Adam"
 ---
+**The number of conflicts with dplyr from all of the packages we must download is becoming annoying and breaking code.** 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE,
                       warning = FALSE)
 options(show.signif.stars = FALSE)
 
+library(lme4)
 library(ggplot2)
 library(ggthemes)
 library(tidyverse)
 library(car)
 library(effects)
 library(mosaic)
-library(ggResidpanel)
+# library(ggResidpanel)
 library(catstats2)
 library(effects)
 library(gtsummary)
@@ -31,7 +33,88 @@ theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 1) Read in your data set and run `dim` on it:
 
 ```{r}
+set.seed(654321)
+s21 <- X2021_Sentinel_Prey_Assessment
+s22 <- PSA_CE2_SentinelPrey
+s23 <- PSA_Sent_prey_2023
 
+# I need to get total predation into a column as a binary. 1 = predation, 0 = not
+
+# 2021 cleaning 
+s21
+clean21 <- s21 %>% 
+  mutate(year = '2021') %>% 
+  dplyr::select(location, year, growth_stage, plot_id, rep.block, treatment, to.predated) %>% 
+  mutate(to.predated = as.double(to.predated)) %>% 
+  dplyr::rename(block = rep.block) %>% 
+  group_by(location, year, growth_stage, plot_id, block, treatment) %>% 
+  # dplyr::summarise(total = sum(to.predated)) %>% 
+  na.omit() %>% 
+  mutate(treatment = case_when(
+    treatment == '33' ~ '3',
+    .default = as.factor(treatment))) %>% 
+  dplyr::filter(treatment != '6',
+                treatment != '7',
+                treatment != '8') %>% 
+  mutate_at(vars(1:6), as.factor) 
+# %>% 
+#   mutate(total = case_when(total == 7 ~ 6,
+#                            .default = as.numeric(total)))
+unique(clean21$treatment)
+which(clean21$total>6)
+# 2022 cleaning 
+s22
+unique(s22$treatment)
+unique(s22$growth_stage)
+clean22 <- s22 %>% 
+  mutate(year = '2022') %>% 
+  dplyr::select(location, year, growth_stage, plotid, block, treatment, to.predated) %>% 
+  dplyr::rename(plot_id = plotid) %>% 
+  mutate(growth_stage = case_when(growth_stage == 'R2' ~ 'R3',
+                                  .default = as.character(growth_stage))) %>% 
+  dplyr::group_by(location, year, growth_stage, plot_id, block, treatment) %>% 
+  # dplyr::summarise(total = sum(to.predated)) %>% 
+  mutate_at(vars(1:6), as.factor)
+
+# 2023 cleaning 
+# some of my totals are adding up to be greater than 6... Why is this? States in question: OH and NC?
+# I found these errors after looking at the enhanced strip chart
+# let's pull these states out and have a closer look
+# 9/17/2024: I cannot do anything with these until I regain access to the Google drive. These are fucked. NC appears to have made their own sampling regime up. 
+# possible solution: If NC and OH have total values >6, I can change them based on the ratio. E.g., pull states out, get total number of samples record total/n... 
+erroneous_df <- s23 %>% 
+  dplyr::filter(location %in% c('OH', 'NC')) %>% 
+  arrange(location, growth_stage, plotid) %>% 
+  distinct()
+
+
+colnames(s23)
+unique(s23$growth_stage)
+
+clean23 <- s23 %>%
+  # dplyr::filter(location != c('OH', 'NC')) %>% 
+  mutate(year = '2023') %>%
+  relocate(am.partial, am.absent, pm.partial, pm.absent) %>% 
+  mutate_at(vars(1:4), as.double) %>% 
+  mutate(to.predated = if_else(am.partial | am.absent | pm.partial | pm.absent == 1, 1, 0)) %>% 
+  relocate(to.predated)%>% 
+  dplyr::select(location, year, growth_stage, plotid, block, treatmetn, to.predated) %>% 
+  dplyr::rename(plot_id = plotid, 
+         treatment = treatmetn) %>% 
+  group_by(location, year, growth_stage, plot_id, block, treatment) %>% 
+  # dplyr::summarise(total = sum(to.predated)) %>% 
+  na.omit() %>% 
+  filter(treatment != 5) %>% 
+  mutate_at(vars(1:6),as.factor)
+unique(clean23$treatment)
+# which(clean23$total >6)
+# these all look good, now let's add the nc and oh back in
+# rbind(clean23, erroneous_df)
+
+# and in the darkness, bind them 
+sent <- rbind(clean21, clean22, clean23)
+as_tibble(sent)
+dim(sent)
 
 ```
 
@@ -62,8 +145,9 @@ Plots were randomly assigned to each block. Field sites were as random as they c
 
 ```{r}
 library(mi)
-#tdf <- missing_data.frame(data.frame(mydatasetname))
-#image(tdf)
+# make an object of the missing df and then present the image
+tdf <- missing_data.frame(data.frame(sent))
+image(tdf)
 
 ```
 
@@ -71,26 +155,57 @@ library(mi)
 
 4) Discuss any other use in classes or theses for the data - either that you have used it for or are currently working on for future submissions.
 
-I am working on this for a publication. 
+**I am working on this for a publication. The Pennsylvania-exclusive data were analyzed for me master's thesis. The larger, whole-project data set is for publication.**
 
 5) Provide at least one display of the data, focusing on the response of interest versus a predictor. If you have multiple predictors, try to plot the response versus those too.
 
 ```{r}
-
-
+sent
+# I do not this plotting function for binary data
+enhanced_stripchart(to.predated ~ year, data = sent)
+enhanced_stripchart(to.predated ~ treatment, data = sent) # 3 = planting green
+enhanced_stripchart(to.predated ~ growth_stage, data = sent) # expect higher predation later in the season
+enhanced_stripchart(to.predated ~ location, data = sent)
 ```
 
+**Important to note: all values have a max of 6. These figures as of 9/17/2024 exclude NC and OH from 2023.**
 
 6) Provide an initial model you hope to fit (does not need to be fit). If you fit a model, add a model summary and effects plot.
 
 ```{r}
+sent
 
+fullm1 <- glmer(to.predated ~ treatment*growth_stage + (growth_stage|year/location/block/plot_id), family = binomial, data = sent) 
+summary(fullm1)
+hist(residuals(fullm1))
+plot(allEffects(fullm1))
 
 ```
 
 7) Start to work on a Table 1 that summarizes variables of interest, possibly by groups of interest. At a minimum, summarize the response variable, by a grouping variable if one exists. 
 
 ```{r}
+# table as a proportion 
+all_locs <- sent %>% 
+  group_by(location, treatment, growth_stage) %>% 
+  dplyr::summarise(prop = mean(to.predated),
+                   sd = sd(to.predated),
+                   n = n(), 
+                   se = sd/sqrt(n))
+
+by_trt <- sent %>% 
+  group_by(treatment) %>% 
+  dplyr::summarise(prop = mean(to.predated),
+                   sd = sd(to.predated),
+                   n = n(), 
+                   se = sd/sqrt(n))
+
+by_growth <- sent %>% 
+  group_by(growth_stage) %>% 
+  dplyr::summarise(prop = mean(to.predated),
+                   sd = sd(to.predated),
+                   n = n(), 
+                   se = sd/sqrt(n))
 
 
 ```
