@@ -77,6 +77,8 @@ clean22 <- s22 %>%
   mutate_at(vars(1:6), as.factor)
 
 # 2023 cleaning 
+
+# all of the below notes can be ignored for now. This was with total predation for the summary statistics, not the binary cleaning for the model
 # some of my totals are adding up to be greater than 6... Why is this? States in question: OH and NC?
 # I found these errors after looking at the enhanced strip chart
 # let's pull these states out and have a closer look
