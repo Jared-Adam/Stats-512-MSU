@@ -20,7 +20,7 @@ library(remotes)
 library(gtsummary)
 library(remotes) #Needed for next two installs from github:
 #remotes::install_github("greenwood-stat/ggResidpanel")
-#library(ggResidpanel)
+library(ggResidpanel)
 #remotes::install_github("greenwood-stat/catstats2")
 library(catstats2)
 library(mosaic)
@@ -195,9 +195,13 @@ $\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.42$
 
 
 ```{r}
-
-
+# lm(sittime ~ likert_scale*occlift)
+summary(lm2)
+confint(lm2)
 ```
+**For two otherwise similar workers, for every change in likert scale, we estimated a mean decrease in moderate lifting of -1.63 (95%: -3.32,0.09).** 
+
+
 
 ## Switching gears... LBP as a response instead of explanatory
 
@@ -205,24 +209,35 @@ $\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.42$
 9) Make a plot of low back pain (`LBP`) as the response variable versus sitting time. Discuss the pattern in the relationship. You can use the entire data set (`g2`) of 201 observations for the data for this plot and related work that follows (this will match the "Crude" row in their Table 3 for the total sitting time).  Also use the default choice for the `bw` value (remove the specification to get this to happen). Remember to improve the x and y axes in the plot.
 
 ```{r}
-
+g2 %>% 
+  ggplot(aes(x = sittime, fill = LBP))+
+  geom_density(position = 'fill')+
+  geom_rug(aes(col = LBP), alpha = 0.1)+
+  labs(title = 'LBP ~ Sit time',
+       x = 'Sit time', 
+       y = 'Density')
 
 ```
-
-
 
 10) Fit an appropriate model with `LBP` as the response and total sitting time as the predictor. Make effects plots on the link and response scales. Compare the previous plot to the effects plot on the response scale to determine which of the two levels of `LBP` the function is treating as a "success". 
 
 ```{r}
+glm1 <- glm(LBP ~ sittime, family = binomial, data = g2)
+summary(glm1)
 
+plot(allEffects(glm1), type = 'link', ylab = 'Estimated log-odds of LBP')
 
+plot(allEffects(glm1), type = 'response', ylab = 'Estimated probability of LBP')
 ```
+
+**It appears that the success group is _high pain_.**
 
 11) Sometimes we would like to have the other level as the success, so we can use `relevel` to switch the baseline level. The following code switches that to create an alternate version of `LBP` called `LBP2`. Refit the previous model with this new response and remake the effects plot on the response scale. No discussion.
 
 ```{r}
 g2 <- g2 %>% mutate(LBP2 = relevel(LBP, "low pain"))
-
+glm2 <- glm(LBP2 ~ sittime, family = binomial, data = g2)
+summary(glm2)
 
 ```
 
@@ -231,12 +246,13 @@ g2 <- g2 %>% mutate(LBP2 = relevel(LBP, "low pain"))
 
 
 ```{r}
+glm1 %>% tbl_regression(exponentiate = T)
 
-
+glm2 %>% tbl_regression(exponentiate = T)
 
 ```
 
-
+**The success in their model is low pain. Labeled _glm2_ in my code, this exponentiated table matches that of the crude model line in table 3.**
 
 13) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.
 
