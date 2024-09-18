@@ -1,0 +1,170 @@
+---
+title: "Lab 5"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(readr)
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(mosaic)
+library(betareg)
+library(gtsummary)
+library(patchwork)
+library(effects)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+# remotes::install_github("greenwood-stat/ggResidpanel")
+library(ggResidpanel)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# Lab 5 Instructions:
+
+Working in a group of 2, 3, or 4 people, complete the following questions. Turn in a single *PDF* _from your word document_ for the group _selecting the group members in grade scope_ after knitting this document with your answers "in-line" (after the questions). 
+
+## White matter lesions (continued):
+
+
+```{r}
+bpdata <- read_csv("bipolardata.csv")
+```
+
+
+```{r}
+ library(tidyverse)
+
+bpdata <- bpdata %>% dplyr::rename(IllnessDuration = 'Illness duration',
+                                   NormVolume = 'nWML_sum',
+                                   SubDep = 'substance dependancy',
+                                   AlcDep = 'alcohol dependancy',
+                                   AnxDis = 'anxiety disorder',
+                                   smoking = 'smoking_yes_no') %>% 
+      mutate(group = factor(group),
+             sex = factor(sex),
+             YMRS = factor(YMRS),
+             DM = factor(DM),
+             smoking = factor(smoking),
+             HYPERT = factor(HYPERT),
+             group = fct_recode(group, 
+                                patient = "1", 
+                                HC = "2"),
+             sex = fct_recode(sex, 
+                              male = "1",
+                              female = "2"),
+             smoking = fct_recode(smoking,
+                                  no = "0",
+                                  yes = "1"),
+             IllnessDurBin = forcats::fct_explicit_na(cut_number(IllnessDuration, n = 2)),
+             IllnessDurBin = fct_recode(IllnessDurBin,
+                                        Low = "[1,16]",
+                                        High = "(16,60]",
+                                        Healthy = "(Missing)"),
+             logNormVolume = log(NormVolume)
+             )
+
+bpdata2 <- bpdata %>% dplyr::select(age1, IllnessDurBin, group, depression)
+bpdata3 <- bpdata2 %>% dplyr::filter(IllnessDurBin != "Healthy") %>% 
+  mutate(IllnessDurBin = factor(IllnessDurBin)) #Cleans out unused level of the factor from before
+
+```
+
+
+
+## Part I: Linear model for NormVolume - types of F-tests
+
+We started to work with the following model on Lab 1 to try to replicate the results from their Table 1 final row (F = 3.968, p-value = 0.048). Note that I've never quite been able to do that.
+
+The theoretical model being fit here is: $\mu\{NormVolume|group, age, DM, smoking, BMI\} = \beta_0 + \beta_1I_{Group = HC} + \beta_2age1 + \beta_3I_{DM = 1} + \beta_4I_{smoking = yes} + \beta_5BMI$
+
+```{r fig.width = 10, fig.height = 10}
+model1 <- lm(NormVolume ~ group + age1 + DM + smoking + BMI, data = bpdata) 
+summary(model1)
+model1 %>% tbl_regression(intercept = T)
+plot(allEffects(model1), grid = T)
+deviance(model1) # RSS full
+
+model2 <- lm(NormVolume~age1 + DM + smoking + BMI, data = bpdata)
+
+
+anova(model2, model1)
+
+Fstat <- (0.38456/1)/(14.199/148)
+# 4.008
+```
+
+1) Generate an ESS F-test for the `group` variable from this model and report the test statistic, distribution under the null hypothesis, and p-value. No "evidence" sentence.
+
+**ESS F (1,148) = 4.008, p-value = 0.047**
+
+
+2) What is the null hypothesis in terms of the slope coefficients of the theoretical model for the ESS F-test?
+
+**Beta 1 = 0. To get from full to reduced, we have to set some to beta(s) to 0.**
+
+
+3) Run `anova()` on `model1` and report the test statistic, distribution under the null hypothesis, and p-value for `group`. No "evidence" sentence or discussion.
+```{r}
+anova(model1)
+
+```
+**F(1, 148) = 7.35, p-value = 0.008**
+
+4) Why is the result from question 3 different from the one in the ESS F-test?
+**T1 anova is not conditional and thus group runs, but is not conditional on the other terms. T1 (anova) the order matters, T2 (Anova) it does not.**
+
+
+5) Run `Anova` on `model1` and report the test statistic, distribution under the null hypothesis, and p-value for `group`. Which of the two previous results does this match and what does that tell you?
+```{r}
+Anova(model1)
+
+```
+**ESS F (1,148) = 4.008, p-value = 0.047 This is a type 2 ESS F test and is conditional on the other terms in the model. This output is correct.**
+
+
+6) Report the t-statistic for `group`, its distribution under the null, and the p-value. Square the t-statistic. Which of the previous F-statistics does this match and what does that tell you?
+
+```{r}
+summary(model1)
+(-2.002)^2
+#4.008
+```
+**T(148) = 4.008, p-value = 0.047. This matches the result of the type 2 Anova test.**
+
+
+
+## Part II: They reported results from this model?
+
+7) To use the `resid_panel` from `ggResidpanel`, you need to specify `"R"` to get a version of the standard R diagnostics but using the enhanced graphics of the package. Run the diagnostic plot on the previous model and get an instructor to check that you have the correct version of `ggResidpanel` installed. No discussion.
+
+```{r fig.height = 10, fig.width = 10}
+resid_panel(model1, "R")
+```
+
+8) Assess the normality of residuals assumption for this model. Reference the appropriate plot and discuss the evidence against the assumption of normality of residuals and, if observed, what pattern the residuals take on.
+
+**The qqplot is heavy tailed and potentially skewed right. There is strong evidence that the residuals do not follow a normal distribution are skewed right.**
+
+
+9) The `resid_calibrate` function provides a way to deepen your understanding of what "reasonable" results should look like in diagnostic plots and to better assess issues in marginal cases. It simulates residuals when the model assumptions are true to compare to the observed residuals. The following code provides three QQ-plots from the model when normality of residuals is true and the real residual distribution. If the real residual distribution is similar to the simulated ones, then there is little evidence of an issue with the assumption being assessed. If the real residual distribution is very different from the simulated ones, then there is strong evidence of an issue with the assumption. Based on the provided result, how similar/different are the real residuals from the other plots? Does this change your previous assessment of the normality of residuals assumption?
+
+
+```{r}
+set.seed(123)
+resid_calibrate(model1, "qq", nsim = 3)
+```
+
+**It is very clear that our data deviate from the simulated qqplots provided. This does not change our previous assessment of normality.**
+
+10) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question.
