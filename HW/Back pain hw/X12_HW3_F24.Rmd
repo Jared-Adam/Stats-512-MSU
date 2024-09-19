@@ -209,8 +209,9 @@ $\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.5678 - 0.1518(likerts
 summary(lm2)
 confint(lm2)
 ```
-**For two otherwise similar workers, for every change in likert scale, we estimated a mean decrease in moderate lifting of -1.63 (95%: -3.32,0.09).** 
+**For the high frequency lifting group the slope for influence is 0.14. This tells us that for every 1-unit increase of the influence variable, the sit time will increase by 0.14 hours. Thus showing there is a slight positive relationship between the work influence and amount of time spent sitting for the individuals that do high levels of lifting (95% CI: -0.3139427 to 0.59120659).** 
 
+**For the moderate frequency lifting group the slope for influence is 1.0049. This tells us that every 1-unit increase of the influence variable, the sit time will decrease by 1.0049 hours. Thus showing there is a positive relationship between the work influence and amount of time spent sitting for the individuals that do moderate levels of lifting.**
 
 
 ## Switching gears... LBP as a response instead of explanatory
