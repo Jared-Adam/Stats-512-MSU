@@ -133,7 +133,7 @@ enhanced_stripchart(g3, sittime~occlift)
 lm1 <- lm(sittime ~ occlift, data = g3)
 summary(lm1)
 
-anova(lm1)
+Anova(lm1)
 
 
 ```
@@ -147,7 +147,7 @@ anova(lm1)
 # enhanced_stripchart(sittime ~ likert_scale, data = g3)+
 #   facet_wrap(~occlift)
 
-ggplot(g3, aes(y = sittime, x = likert_scale))+
+ggplot(g3, aes(y = sittime, x = as.factor(likert_scale)))+
   geom_violin()+
   geom_point()+
   facet_wrap(~occlift)+
@@ -155,7 +155,7 @@ ggplot(g3, aes(y = sittime, x = likert_scale))+
   
 
 ```
-**It is hard to tease out a trend in the potential interaction based on this figure. It looks like the spread of observations is greater in the rarely lifting category than the other two. However, for all three lifting categories, it appears that the likert scale-2 value has the most observations while 0 has the fewest. Based on the violins, there appears to be a trend of similar sitting time values across all three lifting frequency categories.**
+**It is hard to tease out a trend in the potential interaction based on this figure. It looks like the spread of observations is greater in the rarely lifting category than the other two. However, for all three lifting categories, it appears that the likert scale-2 value has the most observations while 0 has the fewest. The high group appears to have no trend, the moderate group appears to have a positive relationship between sit time and likert scale, and the rarely group appears to have a negative relationship.**
 
 6) Fit the interaction model with your new version of the influence variable and occupation lifting, run a model summary, generate two versions of the effects plot (regular version with "faceted" panels and a multiline version that overlays the lines with CI bands and different line types), and write out the estimated model (define any indicators used).
 
@@ -174,21 +174,31 @@ plot(allEffects(lm2), multiline = T, grid = T, confint = list(style = 'auto'), l
 
 **Estimated**
 
-* $\hat{\mu}\{sittime|influence\ast occlift\} = 6.99 + 0.14 (-1.76\cdot1) + (0.58\cdot1) + (0.87\cdot1) (-0.29\cdot 1)$
+* $\hat{\mu}\{sittime|influence\ast occlift\} = 6.9878 + 0.1386     (likertscale) - 1.7615 \cdot I_{Occlift=moderate} + 0.5800 \cdot I_{Occlift=rarely} + 0.8663(likertscale)\cdot I_{Occlift = moderate} - 0.2904(likertscale)\cdot I_{Occlift = rarely})$
+
+* Where $I_{Occlift=moderate}$ is 1 for moderate lift frequency, and 0 otherwise
+ 
+* Where $I_{Occlift=rarely}$ is 1 for rarely lift frequency, and 0 otherwise
 
 7) Report simplified versions of the model for each of the three levels of occupational lift, showing your work. 
 
-* For high: $\hat{\mu}\{sittime|influence\ast (occlift = high)\} = \beta_{0} + \beta_{1}(likertscale)$
-$ \hat{\mu}\{sittime|influence\ast (occlift = high)\} =  6.99 + 0.14$
-$ \hat{\mu}\{sittime|influence\ast (occlift = high)\} = 7.13$
-
-* For moderate: $\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = \beta_{0} + \beta_{1}(likertscale) + \beta_{2}I_{Occlift=moderate} + \beta_{4}(likertscale\cdot I_{Occlift = moderate} $
-$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 6.99 + 0.14 (-1.76\cdot 1) + (.86\cdot1)$
-$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 6.23 $
-
-* For rarely: $\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = \beta_{0} + \beta_{1}(likertscale) + \beta_{3}I_{Occlift=rarely} + \beta_{5}(likertscale\cdot I_{Occlift = rarely})$
-$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 6.99 + 0.14 + (0.58\cdot1) (-0.29\cdot1)$
-$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.42$
+**For high:**
+ 
+$\hat{\mu}\{sittime|influence\ast (occlift = high)\} = 6.9878 + 0.1386(likertscale) - 1.7615 \cdot 0 + 0.5800 \cdot 0 + 0.8663(likertscale)\cdot 0 - 0.2904(likertscale)\cdot 0)$
+ 
+$\hat{\mu}\{sittime|influence\ast (occlift = high)\} = 6.9878 + 0.1386(likertscale)$
+ 
+**For moderate:**
+ 
+$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 6.9878 + 0.1386(likertscale) - 1.7615 \cdot 1 + 0.5800 \cdot 0 + 0.8663(likertscale)\cdot 1 - 0.2904(likertscale)\cdot 0)$
+ 
+$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 5.2263 + 1.0049(likertscale)$
+ 
+**For rarely:**
+ 
+$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 6.9878 + 0.1386(likertscale) - 1.7615 \cdot 0 + 0.5800 \cdot 1 + 0.8663(likertscale)\cdot 0 - 0.2904(likertscale)\cdot 1)$
+ 
+$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.5678 - 0.1518(likertscale)$
 
 
 8) Then report size (slope) interpretation**s** for `influence` for the `high` and `moderate` groups. You won't be able to add a CI to the interpretation for the `moderate` group (yet), but you can get one from the model for the `high` level.
@@ -215,7 +225,7 @@ g2 %>%
   geom_rug(aes(col = LBP), alpha = 0.1)+
   labs(title = 'LBP ~ Sit time',
        x = 'Sit time', 
-       y = 'Density')
+       y = expression(hat(pi)))
 
 ```
 
@@ -256,4 +266,8 @@ glm2 %>% tbl_regression(exponentiate = T)
 
 13) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.
 
+**Chat GPT for some stuff**
+
 14) Document if there is a new partnering in this homework submission for a bonus. If none is noted, we will assume this is a pre-existing group.
+
+**This is a new group. All three members are new**
