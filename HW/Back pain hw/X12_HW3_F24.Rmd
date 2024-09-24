@@ -98,24 +98,27 @@ anova(lmR, lm1A)
 ```{r}
 g3 <- g2R %>% drop_na(occlift, influence) #Use for questions 3 to 8
 
-
 g3 <- g3 %>% 
-  mutate(likert_scale = case_when(influence == 0 ~ 0,
-                                  influence >= 1 & influence <= 25.00 ~ 1,
-                                  influence >= 25.01 & influence <= 50.00  ~ 2,
-                                  influence >= 50.01 & influence <= 75.00 ~ 3,
-                                  influence >=75.01 & influence <= 99.99 ~ 4,
-                                  influence == 100 ~ 5))
+  mutate(influence = influence/20)
+
+
+# g3 <- g3 %>% 
+#   mutate(likert_scale = case_when(influence == 0 ~ 0,
+#                                   influence >= 1 & influence <= 25.00 ~ 1,
+#                                   influence >= 25.01 & influence <= 50.00  ~ 2,
+#                                   influence >= 50.01 & influence <= 75.00 ~ 3,
+#                                   influence >=75.01 & influence <= 99.99 ~ 4,
+#                                   influence == 100 ~ 5))
 print(g3$likert_scale)
 
 ?enhanced_stripchart
-enhanced_stripchart(g3, sittime~likert_scale)+
+enhanced_stripchart(g3, sittime~influence)+
                     labs(title = 'Sit Time ~ Likert Scale',  
                          x = 'Likert scale 0-5',
                          y = 'Total sit time')
 
 ```
-**Based on the enhanced strip chart, it appears that the the average total sit time is similar among all likert scale values. There are many more observations between likert scale 1-3 than the others. It is apparent that there are fewer observations of 0, 4, and 5, which can be seen by the fewer number of dots and the spread of the error. When investigating likert scale values of 5, many of these higher ranking employees may be considered white-collar, and thus did not report sitting time.**
+**Based on the enhanced strip chart, it appears that the the average total sit time is relatively similar among all likert scale values. There are many more observations between likert scale 1-3 than the <1 and >3. It is apparent that there are fewer observations of around 0 and 4 to 5, which can be seen by the fewer number of dots and the spread of the error. When investigating likert scale values of 4 to 5, many of these higher ranking employees may be considered white-collar, and thus did not report sitting time.**
 
 
 
@@ -147,20 +150,25 @@ Anova(lm1)
 # enhanced_stripchart(sittime ~ likert_scale, data = g3)+
 #   facet_wrap(~occlift)
 
-ggplot(g3, aes(y = sittime, x = as.factor(likert_scale)))+
+ggplot(g3, aes(y = sittime, x = as.factor(influence)))+
   geom_violin()+
   geom_point()+
   facet_wrap(~occlift)+
-  labs(title = 'Sit time ~ Likert scale x lifting frequency')
+  labs(title = 'Sit time ~ Influence x lifting frequency')
   
+ggplot(g3, aes(y = sittime, x = influence))+
+  geom_violin()+
+  geom_point()+
+  facet_wrap(~occlift)+
+  labs(title = 'Sit time ~ Influence x lifting frequency')
 
 ```
-**It is hard to tease out a trend in the potential interaction based on this figure. It looks like the spread of observations is greater in the rarely lifting category than the other two. However, for all three lifting categories, it appears that the likert scale-2 value has the most observations while 0 has the fewest. The high group appears to have no trend, the moderate group appears to have a positive relationship between sit time and likert scale, and the rarely group appears to have a negative relationship.**
+**It is hard to tease out a trend in the potential interaction based on this figure. It looks like the spread of observations is greater in the rarely lifting category than the other two. However, for all three lifting categories, it appears that the likert scale-2 value has the most observations while 0 has the fewest. The high group appears to have no trend, the moderate group appears to have a positive relationship between sit time and likert scale, and the rarely group appears to have a negative relationship, but this is hard to confirm by the spread of these data.**
 
 6) Fit the interaction model with your new version of the influence variable and occupation lifting, run a model summary, generate two versions of the effects plot (regular version with "faceted" panels and a multiline version that overlays the lines with CI bands and different line types), and write out the estimated model (define any indicators used).
 
 ```{r}
-lm2 <- lm(sittime ~ likert_scale*occlift, data = g3)
+lm2 <- lm(sittime ~ influence*occlift, data = g3)
 summary(lm2)
 
 plot(allEffects(lm2))
@@ -170,11 +178,11 @@ plot(allEffects(lm2), multiline = T, grid = T, confint = list(style = 'auto'), l
 
 **Predicated**
 
-* $\hat{\mu}\{sittime|influence\ast occlift\} = \beta_{0} + \beta_{1}(likertscale) + \beta_{2}I_{Occlift=moderate} + \beta_{3}I_{Occlift=rarely} + \beta_{4}(likertscale\cdot I_{Occlift = moderate} + \beta_{5}(likertscale\cdot I_{Occlift = rarely})$
+* $\hat{\mu}\{sittime|influence\ast occlift\} = \beta_{0} + \beta_{1}(influence) + \beta_{2}I_{Occlift=moderate} + \beta_{3}I_{Occlift=rarely} + \beta_{4}(influence\cdot I_{Occlift = moderate} + \beta_{5}(influence\cdot I_{Occlift = rarely})$
 
 **Estimated**
 
-* $\hat{\mu}\{sittime|influence\ast occlift\} = 6.9878 + 0.1386     (likertscale) - 1.7615 \cdot I_{Occlift=moderate} + 0.5800 \cdot I_{Occlift=rarely} + 0.8663(likertscale)\cdot I_{Occlift = moderate} - 0.2904(likertscale)\cdot I_{Occlift = rarely})$
+* $\hat{\mu}\{sittime|influence\ast occlift\} = 6.8492 + 0.1959 (influence) - 1.5911 \cdot I_{Occlift=moderate} + 0.336 \cdot I_{Occlift=rarely} + 0.7482(influence)\cdot I_{Occlift = moderate} - 0.1645(influence)\cdot I_{Occlift = rarely})$
 
 * Where $I_{Occlift=moderate}$ is 1 for moderate lift frequency, and 0 otherwise
  
@@ -184,34 +192,34 @@ plot(allEffects(lm2), multiline = T, grid = T, confint = list(style = 'auto'), l
 
 **For high:**
  
-$\hat{\mu}\{sittime|influence\ast (occlift = high)\} = 6.9878 + 0.1386(likertscale) - 1.7615 \cdot 0 + 0.5800 \cdot 0 + 0.8663(likertscale)\cdot 0 - 0.2904(likertscale)\cdot 0)$
+$\hat{\mu}\{sittime|influence\ast (occlift = high)\} = 6.8492 + 0.1959(influence) - 1.5911 \cdot 0 + 0.336 \cdot 0 + 0.7482(influence)\cdot 0 - 0.1645(influence)\cdot 0)$
  
-$\hat{\mu}\{sittime|influence\ast (occlift = high)\} = 6.9878 + 0.1386(likertscale)$
+$\hat{\mu}\{sittime|influence\ast (occlift = high)\} = 6.8492 + 0.1959(influence)$
  
 **For moderate:**
  
-$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 6.9878 + 0.1386(likertscale) - 1.7615 \cdot 1 + 0.5800 \cdot 0 + 0.8663(likertscale)\cdot 1 - 0.2904(likertscale)\cdot 0)$
+$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 6.8492 + 0.1959(influence) - 1.5911 \cdot 1 + 0..336 \cdot 0 + 0.7482(influence)\cdot 1 - 0.1645(influence)\cdot 0)$
  
-$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 5.2263 + 1.0049(likertscale)$
+$\hat{\mu}\{sittime|influence\ast (occlift = moderate)\} = 5.2581 + 0.8868(influence)$
  
 **For rarely:**
  
-$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 6.9878 + 0.1386(likertscale) - 1.7615 \cdot 0 + 0.5800 \cdot 1 + 0.8663(likertscale)\cdot 0 - 0.2904(likertscale)\cdot 1)$
+$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 6.8492 + 0.1959(influence) - 1.5911 \cdot 0 + 0.5800 \cdot 1 + 0.7482(influence)\cdot 0 - 0.1645(influence)\cdot 1)$
  
-$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.5678 - 0.1518(likertscale)$
+$\hat{\mu}\{sittime|influence\ast (occlift = rarely)\} = 7.2374 - 0.0314(influence)$
 
 
 8) Then report size (slope) interpretation**s** for `influence` for the `high` and `moderate` groups. You won't be able to add a CI to the interpretation for the `moderate` group (yet), but you can get one from the model for the `high` level.
 
 
 ```{r}
-# lm(sittime ~ likert_scale*occlift)
+# lm(sittime ~ influence*occlift)
 summary(lm2)
 confint(lm2)
 ```
-**For the high frequency lifting group the slope for influence is 0.14. This tells us that for every 1-unit increase of the influence variable, the sit time will increase by 0.14 hours. Thus showing there is a slight positive relationship between the work influence and amount of time spent sitting for the individuals that do high levels of lifting (95% CI: -0.3139427 to 0.59120659).** 
+**For the high frequency lifting group the slope for influence is 0.1959. This tells us that for every 1-unit increase of the influence variable, the sit time will increase by 0.1959. hours. Thus showing there is a slight positive relationship between the work influence and amount of time spent sitting for the individuals that do high levels of lifting (95% CI: -0.1988016 to 0.59058754).** 
 
-**For the moderate frequency lifting group the slope for influence is 1.0049. This tells us that every 1-unit increase of the influence variable, the sit time will decrease by 1.0049 hours. Thus showing there is a positive relationship between the work influence and amount of time spent sitting for the individuals that do moderate levels of lifting.**
+**For the moderate frequency lifting group the slope for influence is 0.8868. This tells us that every 1-unit increase of the influence variable, the sit time will decrease by 0.8868 hours. Thus showing there is a positive relationship between the work influence and amount of time spent sitting for the individuals that do moderate levels of lifting.**
 
 
 ## Switching gears... LBP as a response instead of explanatory

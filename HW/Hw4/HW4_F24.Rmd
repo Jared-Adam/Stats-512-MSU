@@ -1,0 +1,121 @@
+---
+title: "HW 4"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: "DO NOT INCLUDE NAMES - Just add names in gradescope"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+# install.packages('easyalluvial')
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+# install.packages('modelsummary')
+library(modelsummary)
+library(ggmosaic)
+library(ggResidpanel)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules
+
+In groups of 2, 3, or 4, complete the following. Individual submissions are not allowed and will get a 0 without prior approval to work alone.
+
+# Instructions
+
+For this homework, you will use the tools we've been discussing to do the work that came into a statistical draft report I provide you (Demonstrationreport_2024.docx). This report is based on work of students in a previous semester but has been heavily edited. Each of the highlighted or changed colored fonts in the draft report are noted for you to either edit the text or insert the described figures, tables, or citations. It is your task to figure what to do based on the written report (e.g., what model to fit, what sorts of plots to make, etc.).
+
+The work relates to analyzing the data set from Que et al. (2017) but excludes the Indus river observations that they mentioned.
+
+Edit the provided Word document to submit the report portion with your modifications. There are four sentences you need to edit based on the results. And you need to complete the References, Figures with captions (copy the figures from the knitted work), and Tables with captions (copy from knitted work) sections of the report based on your work.
+
+Then you must combine the report word document that contains the report with references, figures, and tables (only) with the knitted version of this document where you will create the results to finish the report. You have access to Adobe Acrobat and can use it to combine PDF files.
+
+In gradescope, identify the page of the edited sentences and added citations, figures, and table, and knitted Rmd pages.
+
+
+```{r}
+library(readxl)
+riverdata <- read_excel("Qu_etal_2017.xlsx")
+riverdataR <- riverdata %>% dplyr::filter(River != "Indus") %>%
+  mutate(logpCO2 = log(pCO2))
+```
+
+
+```{r fig.width = 8, fig.height = 6}
+enhanced_stripchart(pCO2 ~ River, data = riverdataR) + labs(y = "Partial CO2 pressure (\u03BCatm)")
+```
+
+
+Table 1: Summary stats for pCO2 and elevation by river
+**These do not match the text**
+```{r}
+unique(riverdataR$River)
+m1 <- lm(pCO2 ~ River, data = riverdataR)
+m2 <- lm(Elevation ~ River, data = riverdataR)
+models <- list(m1, m2)
+modelsummary(models)
+
+#OR
+m3 <- lm(pCO2 ~ River*Elevation, data = riverdataR)
+modelsummary(m3)
+```
+
+Figure 2: Scatter plot of pCO2 and elevation by river
+```{r}
+ggplot(riverdataR, aes(x = pCO2, y = Elevation))+
+  geom_point()+
+  facet_wrap(~River)+
+  geom_smooth(method = 'lm' , se = F)+
+  geom_smooth(se = F, lty = 2)+
+  labs(title = 'pCO2 and Elevation by River')
+
+```
+
+Models: 
+```{r}
+m3 <- lm(pCO2 ~ River*Elevation, data = riverdataR)
+plot(allEffects(m3))
+resid_panel(m3, "R", alpha =0.3)
+
+m4 <- lm(log(pCO2) ~ River*Elevation, data = riverdataR)
+resid_panel(m4, "R", alpha = 0.3)
+#Question 1: strong negative relationship for YT
+plot(allEffects(m4))
+```
+
+F-Test:
+```{r}
+Anova(m4)
+# Weak evidence against the null of no interaction between river and elevation
+```
+
+Models without interaction:
+```{r}
+m5 <- lm(log(pCO2) ~ River + Elevation, data = riverdataR)
+resid_panel(m5, "R", alpha = 0.3)
+summary(m5)
+Anova(m5)
+```
+
+Figure 7: 
+```{r}
+plot(allEffects(m5))
+```
