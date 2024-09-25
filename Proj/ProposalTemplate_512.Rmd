@@ -25,6 +25,7 @@ library(ggResidpanel)
 library(catstats2)
 library(effects)
 library(gtsummary)
+library(modelsummary)
 theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 ```
 
@@ -156,12 +157,20 @@ image(tdf)
 5) Provide at least one display of the data, focusing on the response of interest versus a predictor. If you have multiple predictors, try to plot the response versus those too.
 
 ```{r}
-sent
-# I do not this plotting function for binary data
-enhanced_stripchart(to.predated ~ year, data = sent)
-enhanced_stripchart(to.predated ~ treatment, data = sent) # 3 = planting green
-enhanced_stripchart(to.predated ~ growth_stage, data = sent) # expect higher predation later in the season
-enhanced_stripchart(to.predated ~ location, data = sent)
+
+ggplot(sent, aes(x = to.predated, fill = growth_stage))+
+  geom_density(position = 'fill')+
+  labs(title = 'Density chart of total predation',
+       x = 'Total predation (1-0)')
+
+ggplot(sent, aes(x = treatment, y = to.predated))+
+  geom_point()+
+  facet_wrap(~growth_stage)+
+  geom_jitter()+
+  labs(title = 'Total Predation by Treatment and Growth Stage (2021-2023)',
+       x = 'Treatment',
+       y = 'Total predation (0-1)')
+
 ```
 
 
@@ -176,7 +185,12 @@ fullm1 <- glmer(to.predated ~ treatment*growth_stage + (growth_stage|year/locati
 summary(fullm1)
 hist(residuals(fullm1))
 plot(allEffects(fullm1))
-#likelihood test
+
+# F test
+Anova(fullm1)
+
+
+# Likelihood test 
 anova(nullm1, fullm1)
 
 ```
@@ -198,6 +212,7 @@ by_trt <- sent %>%
                    sd = sd(to.predated),
                    n = n(), 
                    se = sd/sqrt(n))
+by_trt
 
 by_growth <- sent %>% 
   group_by(growth_stage) %>% 
@@ -205,10 +220,17 @@ by_growth <- sent %>%
                    sd = sd(to.predated),
                    n = n(), 
                    se = sd/sqrt(n))
-
+by_growth
 
 ```
 
+7a) Comparing my old way of summary stats with yours. Which do I like more?
+```{r}
+datasummary(treatment + growth_stage ~ to.predated, data = sent, output = 'markdown')
+
+
+```
+**I do not think this is great for binary data.**
 
 8) Provide the names of feedback group members and the date, time, and location of your feedback session interaction.
 
