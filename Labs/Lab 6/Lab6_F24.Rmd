@@ -1,0 +1,156 @@
+---
+title: "Lab 6"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: "Jake Garcia and Megan"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(readr)
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(mosaic)
+library(betareg)
+library(gtsummary)
+library(patchwork)
+library(effects)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+#remotes::install_github("greenwood-stat/ggResidpanel")
+library(ggResidpanel)
+webshot::install_phantomjs(force = T) #hopefully allows shiny graphs to knit to static
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# Lab 6 Instructions:
+
+Working in a group of 2, 3, or 4 people, complete the following questions. Turn in a single *PDF* _from your word document_ for the group _selecting the group members in grade scope_ after knitting this document with your answers "in-line" (after the questions). 
+
+## White matter lesions (last time!):
+
+
+```{r}
+bpdata <- read_csv("bipolardata.csv")
+```
+
+
+```{r}
+ library(tidyverse)
+
+bpdata <- bpdata %>% dplyr::rename(IllnessDuration = 'Illness duration',
+                                   NormVolume = 'nWML_sum',
+                                   SubDep = 'substance dependancy',
+                                   AlcDep = 'alcohol dependancy',
+                                   AnxDis = 'anxiety disorder',
+                                   smoking = 'smoking_yes_no') %>% 
+      mutate(group = factor(group),
+             sex = factor(sex),
+             YMRS = factor(YMRS),
+             DM = factor(DM),
+             smoking = factor(smoking),
+             HYPERT = factor(HYPERT),
+             group = fct_recode(group, 
+                                patient = "1", 
+                                HC = "2"),
+             sex = fct_recode(sex, 
+                              male = "1",
+                              female = "2"),
+             smoking = fct_recode(smoking,
+                                  no = "0",
+                                  yes = "1"),
+             IllnessDurBin = forcats::fct_explicit_na(cut_number(IllnessDuration, n = 2)),
+             IllnessDurBin = fct_recode(IllnessDurBin,
+                                        Low = "[1,16]",
+                                        High = "(16,60]",
+                                        Healthy = "(Missing)"),
+             logNormVolume = log(NormVolume)
+             )
+
+bpdata2 <- bpdata %>% dplyr::select(age1, IllnessDurBin, group, depression)
+bpdata3 <- bpdata2 %>% dplyr::filter(IllnessDurBin != "Healthy") %>% 
+  mutate(IllnessDurBin = factor(IllnessDurBin)) #Cleans out unused level of the factor from before
+
+```
+
+
+
+## Part I: Full suite of diagnostics for NormVolume model
+
+```{r fig.width = 10, fig.height = 10}
+model1 <- lm(NormVolume ~ group + age1 + DM + smoking + BMI, data = bpdata) 
+
+```
+
+```{r fig.height = 10, fig.width = 10}
+resid_panel(model1, "R")
+```
+
+
+1) Assess the linearity assumption, referencing appropriate plot(s) in the provided diagnostic plot array.
+**The residual and fitted plot appear to be right skewed, and thus violate the linear assumption. There is a slight negative trend and weird curve.**
+
+2) Make effects plots with partial residuals for the model. Use the partial residuals to discuss the linearity assumption for the two quantitative predictors in the model.
+
+
+```{r fig.width = 10, fig.height = 10}
+plot(allEffects(model1, residual = T), grid = T)
+
+```
+**Strong evidence that age plot violates the assumption of linearity. BMI has missed curvature and violates the linearity assumption.**
+
+
+3) Assess the equal variance assumption, referencing appropriate plot(s) in the discussion.
+**Moderate with a potentially highly influential point in the age plot. BMI is roughly equal except for some of the potential curvature issues.**
+
+
+4) Sometimes it is useful to be able to dig into problematic points. The following code runs `resid_interact` on the model. Use the information in the plot to discuss the potential for influential point(s), making sure to be specific about the values seen in the assessment for influence and then discuss the age and NormVolume and observation number of the most problematic point.
+
+
+```{r}
+resid_interact(model1, "R")
+
+```
+**When looking at the residual~leverage plot, there is a point with a Cook's D value of 0.89. This is very high. This point realtes to the high point/ outlier that is seen in the previous plots.**
+
+## Part II: A better approach?
+
+5) Refit the model with the response being the logNormVolume and remake the interactive diagnostic plot and effects plots with partial residuals. Assess the HOV assumption based on the appropriate plot(s).
+
+
+```{r fig.width = 10, fig.height = 10}
+m2 <- lm(logNormVolume ~ group + age1 + DM + smoking + BMI, data = bpdata)
+plot(allEffects(m2, residuals = T), grid =T)
+resid_interact(m2, 'R')
+
+```
+
+**There is weak evidence against the assumption of the violation of HOV. The spread in the effects plot of age looks good and the location scale plot also looks good.**
+
+6) Generate Type II Anova tests for this model. Fill in the needed details in the following evidence sentence for the `group` variable in the new model.
+
+```{r}
+Anova(m2)
+
+```
+*There is strong evidence against the null hypothesis of all groups in the logNormVolume model being equal to 0 (F(1, 148) = 16.2581, p-value < 0.0001) controlled for age, diabetes, smoking status, and BMI, so we would conclude that there _is_ a difference based on `group` and _keep_ the term in the model.*
+
+
+
+## Part III: Wrapping up?
+
+7) Write a paragraph as if you were a reviewer of the original article who had access to the data set and generated the results we have seen over this set of labs. You are writing this paragraph to send to the original authors. What were issues with their version of results and what would you recommend the researchers change in their results before this paper is able to be accepted for publication?  
+
+**To attain acceptance of this article, we recommend addressing two major points. The ratio of normalized volume should be from the 0-1 scale, and it is not. The correction of this scale may influence results. Additionally, upon the correction of the ratio scale, a new model with log(NormVolume) as the response variable is necessary. Our residual interpretations show moderate to strong evidence of the non-transformed NormVolume variable violating the assumption of normality and HOV. These changes may help to correct to violations of normality and HOV. Upon the completion of these changes and the reinterpretation of the results, this journal may be accepted.**
+
+
+
+8) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question.

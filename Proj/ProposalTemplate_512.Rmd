@@ -21,7 +21,7 @@ library(tidyverse)
 library(car)
 library(effects)
 library(mosaic)
-# library(ggResidpanel)
+library(ggResidpanel)
 library(catstats2)
 library(effects)
 library(gtsummary)
@@ -34,9 +34,9 @@ theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 
 ```{r}
 set.seed(654321)
-s21 <- X2021_Sentinel_Prey_Assessment
-s22 <- PSA_CE2_SentinelPrey
-s23 <- PSA_Sent_prey_2023
+s21 <- read_csv('data/2021 Sentinel Prey Assessment.csv')
+s22 <- read_csv("data/PSA_CE2_SentinelPrey.csv")
+s23 <- read_csv('data/PSA_Sent.prey.2023.csv')
 
 # I need to get total predation into a column as a binary. 1 = predation, 0 = not
 
@@ -57,11 +57,13 @@ clean21 <- s21 %>%
                 treatment != '7',
                 treatment != '8') %>% 
   mutate_at(vars(1:6), as.factor) 
-# %>% 
-#   mutate(total = case_when(total == 7 ~ 6,
-#                            .default = as.numeric(total)))
-unique(clean21$treatment)
-which(clean21$total>6)
+
+ggplot(clean21, aes(x = location, y = to.predated))+
+  geom_point()+
+  geom_violin()+
+  facet_wrap(~growth_stage)
+
+
 # 2022 cleaning 
 s22
 unique(s22$treatment)
@@ -76,42 +78,34 @@ clean22 <- s22 %>%
   # dplyr::summarise(total = sum(to.predated)) %>% 
   mutate_at(vars(1:6), as.factor)
 
+ggplot(clean22, aes(x = location, y = to.predated))+
+  geom_point()+
+  geom_violin()+
+  facet_wrap(~growth_stage)
+
 # 2023 cleaning 
 
-# all of the below notes can be ignored for now. This was with total predation for the summary statistics, not the binary cleaning for the model
-# some of my totals are adding up to be greater than 6... Why is this? States in question: OH and NC?
-# I found these errors after looking at the enhanced strip chart
-# let's pull these states out and have a closer look
-# 9/17/2024: I cannot do anything with these until I regain access to the Google drive. These are fucked. NC appears to have made their own sampling regime up. 
-# possible solution: If NC and OH have total values >6, I can change them based on the ratio. E.g., pull states out, get total number of samples record total/n... 
-erroneous_df <- s23 %>% 
-  dplyr::filter(location %in% c('OH', 'NC')) %>% 
-  arrange(location, growth_stage, plotid) %>% 
-  distinct()
-
-
-colnames(s23)
-unique(s23$growth_stage)
-
 clean23 <- s23 %>%
-  # dplyr::filter(location != c('OH', 'NC')) %>% 
   mutate(year = '2023') %>%
   relocate(am.partial, am.absent, pm.partial, pm.absent) %>% 
   mutate_at(vars(1:4), as.double) %>% 
   mutate(to.predated = if_else(am.partial | am.absent | pm.partial | pm.absent == 1, 1, 0)) %>% 
-  relocate(to.predated)%>% 
+  relocate(to.predated)%>%  
+  mutate(growth_stage = case_when((location == 'NC' & date == '7/20/2023') ~ 'R3',
+                                  .default = as.character(growth_stage))) %>%  
   dplyr::select(location, year, growth_stage, plotid, block, treatmetn, to.predated) %>% 
   dplyr::rename(plot_id = plotid, 
-         treatment = treatmetn) %>% 
+         treatment = treatmetn) %>%
+  distinct() %>% 
   group_by(location, year, growth_stage, plot_id, block, treatment) %>% 
-  # dplyr::summarise(total = sum(to.predated)) %>% 
   na.omit() %>% 
   filter(treatment != 5) %>% 
   mutate_at(vars(1:6),as.factor)
-unique(clean23$treatment)
-# which(clean23$total >6)
-# these all look good, now let's add the nc and oh back in
-# rbind(clean23, erroneous_df)
+
+ggplot(clean23, aes(x = location, y = to.predated))+
+  geom_point()+
+  geom_violin()+
+  facet_wrap(~growth_stage)
 
 # and in the darkness, bind them 
 sent <- rbind(clean21, clean22, clean23)
@@ -170,17 +164,20 @@ enhanced_stripchart(to.predated ~ growth_stage, data = sent) # expect higher pre
 enhanced_stripchart(to.predated ~ location, data = sent)
 ```
 
-**Important to note: all values have a max of 6. These figures as of 9/17/2024 exclude NC and OH from 2023.**
 
 6) Provide an initial model you hope to fit (does not need to be fit). If you fit a model, add a model summary and effects plot.
 
 ```{r}
 sent
+nullm1 <- glmer(to.predated ~  (growth_stage|year/location/block/plot_id), family = binomial, data = sent)
+
 
 fullm1 <- glmer(to.predated ~ treatment*growth_stage + (growth_stage|year/location/block/plot_id), family = binomial, data = sent) 
 summary(fullm1)
 hist(residuals(fullm1))
 plot(allEffects(fullm1))
+#likelihood test
+anova(nullm1, fullm1)
 
 ```
 

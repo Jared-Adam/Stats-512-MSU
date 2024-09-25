@@ -65,40 +65,34 @@ enhanced_stripchart(pCO2 ~ River, data = riverdataR) + labs(y = "Partial CO2 pre
 
 
 Table 1: Summary stats for pCO2 and elevation by river
-**These do not match the text**
 ```{r}
-unique(riverdataR$River)
-m1 <- lm(pCO2 ~ River, data = riverdataR)
-m2 <- lm(Elevation ~ River, data = riverdataR)
-models <- list(m1, m2)
-modelsummary(models)
-
-#OR
-m3 <- lm(pCO2 ~ River*Elevation, data = riverdataR)
-modelsummary(m3)
+datasummary_balance(Elevation + pCO2 ~ River, data = riverdataR, output = 'markdown',
+                    title = 'Elevation + pCO2 ~ River')
 ```
 
 Figure 2: Scatter plot of pCO2 and elevation by river
 ```{r}
-ggplot(riverdataR, aes(x = pCO2, y = Elevation))+
+ggplot(riverdataR, aes(x = Elevation, y = pCO2))+
   geom_point()+
   facet_wrap(~River)+
   geom_smooth(method = 'lm' , se = F)+
   geom_smooth(se = F, lty = 2)+
   labs(title = 'pCO2 and Elevation by River')
-
 ```
 
 Models: 
 ```{r}
 m3 <- lm(pCO2 ~ River*Elevation, data = riverdataR)
-plot(allEffects(m3))
+plot(allEffects(m3), grid = T)
+#fig 3
 resid_panel(m3, "R", alpha =0.3)
 
-m4 <- lm(log(pCO2) ~ River*Elevation, data = riverdataR)
+m4 <- lm(logpCO2 ~ River*Elevation, data = riverdataR)
+#fig 4
 resid_panel(m4, "R", alpha = 0.3)
 #Question 1: strong negative relationship for YT
-plot(allEffects(m4))
+#fig 5
+plot(allEffects(m4, residuals = T), grid = T)
 ```
 
 F-Test:
@@ -106,16 +100,19 @@ F-Test:
 Anova(m4)
 # Weak evidence against the null of no interaction between river and elevation
 ```
-
-Models without interaction:
+Figure 6:
 ```{r}
-m5 <- lm(log(pCO2) ~ River + Elevation, data = riverdataR)
+m5 <- lm(logpCO2 ~ River + Elevation, data = riverdataR)
+# resid_interact(lm_add, "R")
+resid_calibrate(m5, "R")
+
 resid_panel(m5, "R", alpha = 0.3)
 summary(m5)
 Anova(m5)
+confint(m5)
 ```
 
 Figure 7: 
 ```{r}
-plot(allEffects(m5))
+plot(allEffects(m5, residuals = T),grid = T)
 ```
