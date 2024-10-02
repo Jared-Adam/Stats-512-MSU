@@ -1,0 +1,146 @@
+---
+title: "STAT X12 HW 5"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: "Due October 7 at 11:59 pm"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(remotes)
+library(gtsummary)
+library(remotes) #Needed for next two installs from github:
+#remotes::install_github("greenwood-stat/ggResidpanel")
+library(ggResidpanel)
+#remotes::install_github("greenwood-stat/catstats2")
+library(catstats2)
+library(mosaic)
+library(effects)
+library(readxl)
+library(MuMIn)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+# HW rules:
+
+In groups of 2 or 3, complete the following questions in-line. 
+
+## Explaining voice pitch...
+
+
+Read "The pitch of babies' cries predicts their voice pitch at age five" by Levrero et al. (2018) available at https://royalsocietypublishing.org/doi/10.1098/rsbl.2018.0065 and then answer the following questions.
+
+
+* Levrero,  F., Mathevon, N., Pisanski, K., Gustafsson, E. and Reby, D. 2018 The pitch of babies’ cries predicts their voice pitch at age 5. _Biology Letters_ 1420180065, 5 pages.
+
+```{r fig.height=8, fig.width=8}
+pd1 <- read_xlsx("pitchdataset.xlsx")
+pd2 <- pd1 %>% dplyr::rename(Subject = 'Subject n0', 
+                             Sex = "sex (1 = M, 2 = F)",
+                             BabyAge = "Baby Age (days)",
+                             BabyWeight = "Baby Weight (kg)",
+                             BabyCry = "Baby Cry F0 (Hz)",
+                             ChildAge = "Child Age (days)",
+                             ChildSpeech = "Child Speech F0 (Hz)",
+                             ChildWeight = "Child Weight (kg)",
+                             ChildHeight = "Child Height (cm)",
+                             RightHandRatio = "Right hand 2D:4D ratio",
+                             LeftHandRatio = "Left hand 2D:4D ratio" ) %>% 
+  mutate(Sex = factor(Sex))
+
+```
+
+
+1) Use the information in the names for the original data set to improve the level names for the Sex variable in `pd2`.
+
+```{r}
+
+```
+
+2) Make a plot similar to their Figure 1 except facet the plot by sex of the child and get linear smoothing lines for each group. Do you agree with their choice to not consider an interaction based on this plot? 
+
+
+```{r fig.height=4, fig.width=8}
+
+
+```
+
+3) Graph the results for baby crying frequency based on sex of the children. They found a p-value of 0.511 for this difference using a t-test. Two-sample t-tests assume independent observations and that the responses are normally distributed within groups. There is a version that allows for different variances and one that does not. Code for both versions is provided. Which version does it appear that they used? What are your thoughts on using this test in this situation?
+
+```{r}
+t.test(BabyCry~Sex, data=pd2)
+t.test(BabyCry~Sex, data=pd2, var.equal = T)
+
+```
+
+4)  Table 2 details their "stepwise multiple linear regression". Attempt to re-create their results. Hint: only add one predictor at a time to the model. Note that you will only be able to match their test statistic magnitude (not sign) and the p-value. Just R code with model summaries for the models they say they are fitting, no discussion yet.
+
+```{r fig.height=8, fig.width=8}
+
+
+```
+
+5) Start with fitting a model that uses all four predictor variables that they considered in Table 2 (no interactions). Report the standard four panel diagnostic plot. Assess the  normality assumption and the potential for an influential point to be present, referencing specific plot(s) for the assessments.
+
+
+```{r fig.height=5, fig.width=8}
+
+
+```
+
+
+6) Check for multicollinearity using VIFs. Discuss whether there are issues and then interpret the VIF for the coefficient that is most impacted by multicollinearity.
+
+```{r}
+
+
+```
+
+
+7) Make an effects plot with partial residuals and discuss the assumption of linearity of the responses with each predictor. 
+
+```{r fig.height=6, fig.width=8}
+
+
+```
+
+
+8) Perform backward stepwise model selection/refinement where you take out one term at a time from the model with all terms _using the previous four predictors_ (additive and linear), removing the term with the largest p-value. Do you end up with the same model? Write an evidence sentence for the first test in that sequence, then just briefly discuss any further model refinement results (report test statistics, distributions, and p-values for each "deciding" result).
+
+```{r fig.height=8, fig.width=8}
+
+
+```
+
+
+9) Report the standard four panel diagnostic plot for their final model (should just use Baby cry frequency). Re-assess influential points and normality, referencing specific plots for each assessment.
+
+```{r fig.height=6, fig.width=8}
+
+
+```
+
+
+
+10) Start with the model with their predictors (BabyCry, ChildAge, ChildWeight, and ChildHeight and add Sex of the children and an interaction of Sex and `BabyCry`). Then use `dredge` from `MuMIn` to fit and compare all possible models on the AICc. Print out and make a plot of the output of the function using `ggdredgeplot`. How many models were fit in exploring "all possible models here"? Assess the evidence for the top model versus the next best model (what is in each?) and versus the mean-only model. You need to report the numerical support for your evidence statements.
+
+```{r fig.height=4, fig.width=8}
+library(ggrepel)
+library(cetcolor)
+#  prevent fitting sub-models to different datasets: 
+options(na.action = "na.fail") #Must be run to use dredge
+
+
+```
+
+
+11) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.

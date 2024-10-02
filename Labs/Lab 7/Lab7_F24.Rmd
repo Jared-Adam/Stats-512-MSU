@@ -1,0 +1,208 @@
+---
+title: "Lab 7"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: "Ryan Kardoes"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+library(reshape2)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+library(modelsummary)
+library(ggmosaic)
+library(ggResidpanel)
+library(MuMIn)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules
+
+In groups of 2 or 3, complete the following. Individual submissions are not allowed and will get a 0 without prior approval to work alone.
+
+# Sprinting Speed
+
+In my new book, I discuss a study of 100 meter sprint times in the first round of major track and field events, where the runners are randomly assigned to the lane they run in. Munro (2022) explored role of the lane of the runner on the total time to run the event (in seconds).
+
+* Citation: Munro D (2022) Are there lane advantages in track and field? PLoS ONE 17(8): e0271670. https://doi.org/10.1371/journal.pone.0271670
+
+For this lab, you will be exploring the sprint speeds in the men's division - I explored the results for the women's division in Chapters 1 and 2 of my book.
+
+```{r}
+data(full100results)
+full100results <- full100results %>% mutate(
+  lane = factor(lane),
+  country = factor(country),
+  athlete = factor(athlete),
+  meet = factor(meet),
+  event = factor(event),
+  Division = factor(Division))
+
+m100results <- full100results %>% filter(Division == "Men")
+
+mresR <- m100results %>% drop_na(mark1, reactiontime)
+
+enhanced_stripchart(mark1 ~ lane, data = mresR)
+```
+
+*1) Read the help file for `full100results` for variable descriptions. Make plots for the cleaned Men's division results (i.e., use `mresR`) of the total 100 run time versus personal best and versus season best and patch the two plots together using patchwork. To save a little time, you do not need to edit the axis labels or add a title. No discussion, but make sure you review the plots to think about what might be coming in terms of modeling the total run time.*
+
+```{r}
+?full100results
+colnames(mresR)
+p1 <- ggplot(mresR, aes(x = pb, y = mark1))+
+  geom_point()
+p2 <- ggplot(mresR, aes(x = sb, y = mark1))+
+  geom_point()
+
+p1+p2
+
+```
+
+*2) Make a `ggcorrplot` of the total run time, season and personal bests, wind speed, and reaction time, with the correlation labels showing. Which two predictors are most highly correlated with the total run time?*
+
+
+```{r}
+# The `ggcorrplot` function that we're using comes from the `catstats2` package, not `ggcorrplot`; do NOT do `library(ggcorrplot)`.
+?ggcorrplot
+corr1 <- mresR %>% 
+  dplyr::select(mark1, pb, sb, wind1, reactiontime)
+
+ggcorrplot(cor(corr1), lab =T, hc.order = T)
+
+```
+**It appears that both the season best (0.81) and personal best (0.81) are highly correlated to the 100 meter times.**
+
+
+*3) Fit two models for the total run time, one with reaction time, lane, wind speed, and personal best as predictors (no interactions) and the other that swaps personal best for season best. Make effects plots for each model. Note the R-squared for both models and compare the values. You do not need to fully report either R-squared in a sentence, but do discuss how similar or different they are.*
+
+
+```{r}
+lm1 <- lm(mark1 ~ reactiontime + lane + wind1 + pb, data = mresR)
+summary(lm1)
+plot(allEffects(lm1))
+#0.6778
+lm2 <- lm(mark1 ~ reactiontime + lane + wind1 + sb, data = mresR)
+summary(lm2)
+plot(allEffects(lm2))
+#0.6724
+```
+**Both of these R squared values appear to be quite similar, and thus the models are similar there are explanatory power.**
+
+
+
+*4) Find the VIFs (and a GVIF) for each model. When reporting VIFs, you should start with discussing the general amount of multicollinearity based on the results (with citing your numerical results) and then (often) focus on the most impacted predictor or one of particular interest and interpret that result on the inflation of SE scale. Pick a model and note whether the potential for an issue with multicollinearity and then report the VIF for either the personal or season best in the model you selected.*
+
+```{r}
+vif(lm1)
+vif(lm2)
+
+```
+**Note for self, if ct variable hs more than 2 levels, then GVIF produced.**
+**The GVIF values in the personal best model are all <2. Include a note about the SE here.. sb is 1.03 times higher.. There appears to be very low levels of collinearity among the variables in this model. The rule of thumb states that any GVIF/VIF 5>= is erroneous, but we do not see that in either model.**
+
+
+*5) I fit a similar model called `m3` that contains reaction time, lane, and wind speed and both seasonal and personal best as predictors. Recalculate and re-discuss the VIFs for this single model.*
+
+```{r}
+m3 <- lm(mark1 ~ pb + sb + reactiontime + lane + wind1, data = mresR)
+summary(m3)
+vif(m3)
+```
+**Now that both sb and pb are in the same model, we see that the GVIF values are both ~19. This indicates high multicollinearity between these two variables and one should be removed from the model.**
+
+*6) In order to explore the impacts of shared information, the following code fits a sequence of models that contain different choices for the person best slope (these are fixed and stored in `pb_slope`) and then lets `lm` find the best estimates of the results of the coefficients in the model, with our main focus on the estimates it chose for the season best slope. I also calculated the R-squared of each model and stored those results. Review the contents of `forplot` and use the first panel of the provided plot to discuss the relationship between the slope of personal best and season best in the model.*
+
+```{r}
+pb_slope <- seq(from = -0.2, to = 1.2, length.out = 50)
+sbslopes <- numeric(0)
+rsq <- numeric(0)
+
+SST <- sum(lm(mark1 ~ 1, data = mresR)$residuals^2)
+
+
+for (j in 1:length(pb_slope)){
+  m3o <- lm(mark1 ~ offset(pb_slope[j]*pb) + sb + reactiontime + lane + wind1, data = mresR)
+  sbslopes[j] <- m3o$coef[2]
+  rsq[j] <- (SST - sum(m3o$residuals^2))/SST
+ }
+
+forplot <- as.data.frame(cbind(pb_slope, sbslopes, rsq))
+
+View(forplot)
+
+slopeplot <- forplot %>% ggplot(aes(x = pb_slope, y = sbslopes, color = rsq)) +
+  geom_point() +
+  scale_color_viridis_c() +
+  coord_fixed() +
+  geom_vline(xintercept = 0.484, alpha = 0.7, color = "skyblue", size = 1) +
+  geom_hline(yintercept = 0.3514, alpha = 0.7, color = "tomato", size = 0.75)
+
+rsqplot <- forplot %>% ggplot(aes(x = pb_slope, y = rsq, color = sbslopes)) +
+  geom_point() +
+  scale_color_viridis_c(option = "A") +
+  geom_vline(xintercept = 0.484, alpha = 0.7, color = "skyblue", size = 1) +
+  ylim(c(0,1))
+
+slopeplot + rsqplot
+
+```
+**There are minimal in the slopes of the r squared values of personal and season best change. Because the values and fitted values are almost the same, when one goes up, the other goes down to correct/ account for that increase. And thus, we see a 1:1 slope relationship.**
+
+
+*7) Using the second panel of the previous plot, discuss the impacts on the R-squareds as the personal best slopes were changed using the second panel.*
+
+**As we saw in the previous plot, there are very few differences in the r squared values with a change in the personal best slope. Again, because these two variables are 1:1 and share the same information, we see the opposite slopes as one goes up, the other goes down.**
+
+
+*8) The researchers were mainly interested in whether there was a difference based on the lane of the runners. Report an evidence sentence for the `lane` variable from model `m3`, noting whether you think there really are any potential differences based on the lane to investigate further.*
+
+
+```{r}
+summary(m3)
+Anova(m3)
+
+```
+When looking at lane, there is weak evidence against the null (failing to reject) hypothesis of **all in 100 meter time = 0 F(8,815) = 0.8482, p-value = 0.56** based on the lane controlling personal best, seasonal best, reaction time, and wind. We conclude we should remove the lane term from the model. 
+
+
+*9) The data set as analyzed contains all of the available races in the first round of the major international events for the men's 100 meter, except for those removed in the first steps of data wrangling process. Suppose that the researchers decided to use a model with personal best, reaction time, lane, and wind speed. Write a scope of inference for that model and be specific about the implications for each of the variables in the model.*
+
+SKIP
+
+
+*10) The following code runs the `dredge` function on model `m3` and finds AICs for those models and plots the results. How many different models were considered here? What is in the top model? Is this surprising given the previous results?*
+
+
+```{r}
+library(ggrepel)
+library(cetcolor)
+
+options(na.action = "na.fail")
+d1 <- dredge(m3, rank = "AIC")
+dim(d1)
+d1
+d1 %>% ggdredgeplot()
+
+```
+**32 models, the top model contains, pb, sb, wind, and reaction time, but not lane. It is not surprising that lane is removed, but surprising that sb and pb are in the same.**
+
+*11) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question.*
