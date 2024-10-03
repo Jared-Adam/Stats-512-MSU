@@ -63,6 +63,9 @@ pd2 <- pd1 %>% dplyr::rename(Subject = 'Subject n0',
 1) Use the information in the names for the original data set to improve the level names for the Sex variable in `pd2`.
 
 ```{r}
+pd2 <- pd2 %>% 
+  mutate(Sex = fct_recode(Sex, 'm' = '1', 'f' = '2'))
+
 
 ```
 
@@ -70,9 +73,14 @@ pd2 <- pd1 %>% dplyr::rename(Subject = 'Subject n0',
 
 
 ```{r fig.height=4, fig.width=8}
-
+ggplot(pd2, aes(x = BabyCry, y = ChildSpeech))+
+  geom_point()+
+  facet_wrap(~Sex)+
+  geom_smooth(method = lm, se = FALSE)
 
 ```
+**I agree with their choice not to include the interaction. If these lines were to be opposite, rather than seemingly predicting similar trends, I would consider the interaction.**
+
 
 3) Graph the results for baby crying frequency based on sex of the children. They found a p-value of 0.511 for this difference using a t-test. Two-sample t-tests assume independent observations and that the responses are normally distributed within groups. There is a version that allows for different variances and one that does not. Code for both versions is provided. Which version does it appear that they used? What are your thoughts on using this test in this situation?
 
@@ -81,10 +89,23 @@ t.test(BabyCry~Sex, data=pd2)
 t.test(BabyCry~Sex, data=pd2, var.equal = T)
 
 ```
+**It appears the authors chose the second t test with equal variance. I am not sure what to think. The same size is small with n=15 (male = 9, female = 6), so predictions are already going to be suspect. The model with equal variance does shrink the CI's, which makes me accept the second one as well. I suppose either are fine, especially because neither produced a p-value < 0.05.**
+
 
 4)  Table 2 details their "stepwise multiple linear regression". Attempt to re-create their results. Hint: only add one predictor at a time to the model. Note that you will only be able to match their test statistic magnitude (not sign) and the p-value. Just R code with model summaries for the models they say they are fitting, no discussion yet.
 
 ```{r fig.height=8, fig.width=8}
+lm0 <- lm(ChildSpeech ~ BabyCry, data = pd2)
+summary(lm0)
+
+lm1 <- lm(ChildSpeech ~ BabyCry + ChildAge, data = pd2)
+summary(lm1)
+
+lm2 <- lm(ChildSpeech ~ BabyCry + ChildWeight, data = pd2)
+summary(lm2)
+
+lm3 <- lm(ChildSpeech ~ BabyCry + ChildHeight, data = pd2)
+summary(lm3)
 
 
 ```
@@ -94,42 +115,59 @@ t.test(BabyCry~Sex, data=pd2, var.equal = T)
 
 ```{r fig.height=5, fig.width=8}
 
+lm4 <- lm(ChildSpeech ~ BabyCry + ChildAge + ChildHeight + ChildWeight, data = pd2)
+summary(lm4)
+resid_panel(lm4, "R", alpha = 0.2)
 
 ```
-
+**In the Residual vs Fitted plot, the variance appears to be a relatively constant. The sample size is small, but it appears there is weak evidence against the assumption of equal variance. It also appears there is no missed curvator. For the q-q plot, there is evidence of heavy tail, but this does not appear to violate the assumption of normal distribution. Becuase I do not see any missed curvator in the Residual-Fitted plot, I am not looking at the location plot. The Residual-Leverage plot appears to have no points of high leverage/ influence. There is one that reaches the 0.5 line, buyt that appears to be the highest of them all.**
 
 6) Check for multicollinearity using VIFs. Discuss whether there are issues and then interpret the VIF for the coefficient that is most impacted by multicollinearity.
 
 ```{r}
-
+vif(lm4)
 
 ```
-
+**The values for child height and child weight have relatively high values, but they do not reach the rule of >5. I am still concerned for these two variables and their potential multicollinearity.**
 
 7) Make an effects plot with partial residuals and discuss the assumption of linearity of the responses with each predictor. 
 
 ```{r fig.height=6, fig.width=8}
-
+plot(allEffects(lm4, residuals = T), grid = T)
 
 ```
-
+**The only variable that may have some missed curvator/ violate the assumption of normality is child age. With a larger sample, this may be resolved.**
 
 8) Perform backward stepwise model selection/refinement where you take out one term at a time from the model with all terms _using the previous four predictors_ (additive and linear), removing the term with the largest p-value. Do you end up with the same model? Write an evidence sentence for the first test in that sequence, then just briefly discuss any further model refinement results (report test statistics, distributions, and p-values for each "deciding" result).
 
 ```{r fig.height=8, fig.width=8}
+lm4 <- lm(ChildSpeech ~ BabyCry + ChildAge+ ChildWeight + ChildHeight, data = pd2)
+summary(lm4)
+confint(lm4)
+
+lm5 <- lm(ChildSpeech ~ BabyCry + ChildAge+ ChildHeight, data = pd2)
+summary(lm5)
 
 
+lm6 <- lm(ChildSpeech ~ BabyCry + ChildAge, data = pd2)
+summary(lm6)
+
+lm7 <- lm(ChildSpeech ~ BabyCry, data = pd2)
+summary(lm7)
+confint(lm7)
 ```
+**I ended up with the same final model as the authors did.**
+**There is strong evidence against the null hypothesis that Child Weight two-side t = 0.624 (CI: -4.39, 7.8), p-value = 0.55 is responsible for variation in the frequency of child speech. Upon removal of this term, additional step-wise removals were done until the final model (lm7) was chosen with frequency of child speech as a function of frequency of baby cry two-sided t = 2.98 (CI:0.084, 0.53), p-value = 0.011.** 
 
 
 9) Report the standard four panel diagnostic plot for their final model (should just use Baby cry frequency). Re-assess influential points and normality, referencing specific plots for each assessment.
 
 ```{r fig.height=6, fig.width=8}
-
+resid_panel(lm7, "R")
 
 ```
 
-
+**These all look fine. Potential missed curavtor in the the residuals vs fitted plot, but a small sample size is lieky driving this.**
 
 10) Start with the model with their predictors (BabyCry, ChildAge, ChildWeight, and ChildHeight and add Sex of the children and an interaction of Sex and `BabyCry`). Then use `dredge` from `MuMIn` to fit and compare all possible models on the AICc. Print out and make a plot of the output of the function using `ggdredgeplot`. How many models were fit in exploring "all possible models here"? Assess the evidence for the top model versus the next best model (what is in each?) and versus the mean-only model. You need to report the numerical support for your evidence statements.
 
@@ -139,8 +177,13 @@ library(cetcolor)
 #  prevent fitting sub-models to different datasets: 
 options(na.action = "na.fail") #Must be run to use dredge
 
+lm8 <- lm(ChildSpeech ~ BabyCry + ChildAge + ChildWeight + ChildHeight+ Sex + Sex*BabyCry, data = pd2)
+
+d <- dredge(lm8)
+ggdredgeplot(d)
+dim(d)
 
 ```
-
+**40 total models run. The best model produced includes only BabyCry and has an AIC of 137.6. The next best model contains BabyCry and ChildAge with an AIC of 138.8. These models have AIC values within 2 points of one another (delta = 1.25), and thus are considered to be of equal quality.**
 
 11) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.
