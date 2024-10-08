@@ -193,17 +193,16 @@ plot(allEffects(nr_m1), type = 'response', ylab = 'estimated probability differn
 Anova(nr_m1)
 
 # Adding random effects
+# This is now a random intercept, fixed slope model
 
 m1 <- glmer(to.predated ~ treatment*growth_stage + location + (1|year), family = binomial, data = sent)
 summary(m1)
 coef(m1)$year
+Anova(m1)
 
 m2 <- glmer(to.predated ~ treatment*growth_stage + location + (1|year) + (1|year:block) + (1|year:block:plot_id) , family = binomial, data = sent)
 summary(m2)
 
-
-# F test
-Anova(fullm1)
 
 
 ```
