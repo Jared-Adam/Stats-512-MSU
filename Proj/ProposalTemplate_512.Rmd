@@ -152,25 +152,30 @@ image(tdf)
 
 4) Discuss any other use in classes or theses for the data - either that you have used it for or are currently working on for future submissions.
 
-**I am working on this for a publication. The Pennsylvania-exclusive data were analyzed for me master's thesis. The larger, whole-project data set is for publication.**
+**I am working on this for a publication. There is no published paper yet. None of the code from that is used here. This analysis is for all of the states combined, but in the future, I plan to run each state individually with their three years of data. I suspect results to differ based on some regional grouping (e.g., growing degree days, growth region, etc.), but am yet to decide what I will use. For now, I am mainly interested in the treatment and growth stage effects on the whole data set. **
 
 5) Provide at least one display of the data, focusing on the response of interest versus a predictor. If you have multiple predictors, try to plot the response versus those too.
 
 ```{r}
 
-ggplot(sent, aes(x = to.predated, fill = growth_stage))+
-  geom_density(position = 'fill')+
-  labs(title = 'Density chart of total predation',
-       x = 'Total predation (1-0)')
-
-ggplot(sent, aes(x = treatment, y = to.predated))+
-  geom_point()+
+library(ggmosaic)
+sent %>% 
+  ggplot() +
+  geom_mosaic(aes(x = product(to.predated)))+
   facet_wrap(~growth_stage)+
-  geom_jitter()+
-  labs(title = 'Total Predation by Treatment and Growth Stage (2021-2023)',
-       x = 'Treatment',
-       y = 'Total predation (0-1)')
+  scale_fill_colorblind()
 
+sent %>% 
+  ggplot() +
+  geom_mosaic(aes(x = product(to.predated)))+
+  facet_wrap(~treatment)+
+  scale_fill_colorblind()
+
+sent %>% 
+  ggplot() +
+  geom_mosaic(aes(x = product(to.predated)))+
+  facet_wrap(~location)+
+  scale_fill_colorblind()
 ```
 
 
@@ -178,20 +183,28 @@ ggplot(sent, aes(x = treatment, y = to.predated))+
 
 ```{r}
 sent
-nullm1 <- glmer(to.predated ~  (growth_stage|year/location/block/plot_id), family = binomial, data = sent)
+nr_m1 <- glm(to.predated ~treatment*growth_stage + location, family = binomial, data = sent)
+summary(nr_m1)$coefficients
+confint(nr_m1)
 
+plot(allEffects(nr_m1), type = 'link', ylab = 'estimated log differnces in total predation')
+plot(allEffects(nr_m1), type = 'response', ylab = 'estimated probability differnces in total predation')
 
-fullm1 <- glmer(to.predated ~ treatment*growth_stage + (growth_stage|year/location/block/plot_id), family = binomial, data = sent) 
-summary(fullm1)
-hist(residuals(fullm1))
-plot(allEffects(fullm1))
+Anova(nr_m1)
+
+# Adding random effects
+
+m1 <- glmer(to.predated ~ treatment*growth_stage + location + (1|year), family = binomial, data = sent)
+summary(m1)
+coef(m1)$year
+
+m2 <- glmer(to.predated ~ treatment*growth_stage + location + (1|year) + (1|year:block) + (1|year:block:plot_id) , family = binomial, data = sent)
+summary(m2)
+
 
 # F test
 Anova(fullm1)
 
-
-# Likelihood test 
-anova(nullm1, fullm1)
 
 ```
 

@@ -178,12 +178,14 @@ library(cetcolor)
 options(na.action = "na.fail") #Must be run to use dredge
 
 lm8 <- lm(ChildSpeech ~ BabyCry + ChildAge + ChildWeight + ChildHeight+ Sex + Sex*BabyCry, data = pd2)
-
-d <- dredge(lm8)
-ggdredgeplot(d)
-dim(d)
+summary(lm8)
+lmmean <- lm(ChildSpeech ~ 1, data = pd2)
+AIC(lmmean) # = 141.2201
+dredge(lm8, rank = 'AIC')
+ggdredgeplot(dredge(lm8, rank = 'AIC'))
+dim(dredge(lm8, rank = 'AIC'))
 
 ```
-**40 total models run. The best model produced includes only BabyCry and has an AIC of 137.6. The next best model contains BabyCry and ChildAge with an AIC of 138.8. These models have AIC values within 2 points of one another (delta = 1.25), and thus are considered to be of equal quality.**
+**40 total models run. The best model has the bbc, cha, and chh variables with an AIC of 134.4. The next best model with a delta of 0.17 has bbc, cha, and chw. There are several other models that fall within the delta of 2 range, and should be considered for final interpretations. The mean only model had an AIC of 141.22, which delta > 2 of the best model. There is strong evidence against the null that the mean only model is better..**
 
 11) Document any resources you used outside of those provided in this class. This includes, but is not limited to, students in other groups and generative AI. If the resource is not static, discuss how you used it and which questions you used it for. Report "NONE" if you did not use any.
