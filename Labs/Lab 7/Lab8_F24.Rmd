@@ -1,0 +1,168 @@
+---
+title: "Lab 8"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: "DO NOT INCLUDE NAMES - Just add names in gradescope"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+#remotes::install_github("greenwood-stat/catstats2")
+#Can comment out re-installing catstats2 after running once
+library(catstats2)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+library(modelsummary)
+library(ggmosaic)
+library(ggResidpanel)
+library(MuMIn)
+library(ggrepel) #needed for ggdredgeplot
+library(cetcolor) #needed for ggdredgeplot
+webshot::install_phantomjs(force = T)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules
+
+In groups of 2 to 4, complete the following. Individual submissions are not allowed and will get a 0 without prior approval to work alone.
+
+# Sprinting Speed model selection
+
+In my new book, I discuss a study of 100 meter sprint times in the first round of major track and field events, where the runners are randomly assigned to the lane they run in. Munro (2022) explored role of the lane of the runner on the total time to run the event (in seconds).
+
+* Citation: Munro D (2022) Are there lane advantages in track and field? PLoS ONE 17(8): e0271670. https://doi.org/10.1371/journal.pone.0271670
+
+For this lab, you will be exploring the sprint speeds in the men's division - I explored the results for the women's division in Chapters 1 and 2 of my book.
+
+
+```{r}
+data(full100results)
+full100results <- full100results %>% mutate(
+  lane = factor(lane),
+  country = factor(country),
+  athlete = factor(athlete),
+  meet = factor(meet),
+  event = factor(event),
+  Division = factor(Division))
+
+m100results <- full100results %>% filter(Division == "Men")
+
+mresR <- m100results %>% drop_na(mark1, reactiontime)
+
+```
+
+
+```{r}
+m1 <- lm(mark1 ~ pb + reactiontime + lane + wind1, data = mresR)
+m2 <- lm(mark1 ~ sb + reactiontime + lane + wind1, data = mresR)
+m3 <- lm(mark1 ~ pb + sb + reactiontime + lane + wind1, data = mresR)
+```
+
+```{r}
+Anova(m3)
+```
+
+
+*1) [Repeated from Lab 7] The data set as analyzed contains all of the available races in the first round of the major international events for the men's 100 meter, except for those removed in the first steps of data wrangling process. Suppose that the researchers decided to use a model with personal best, reaction time, lane, and wind speed. Write a scope of inference for that model and be specific about the implications for each of the variables in the model.*
+
+**The aspects of this paper used to predict if lane predicts the outcome of racers using data from the men's U20 division world division of racers that finished looking at data from 2000-2019. Lane assignment was random during the first round, and thus we have causal inference. But personal best, seasonal best, and wind cannot be randomly assigned, so we cannot have causal inference on the response. We can potentially infer how lane influences the response, but with other non-randomly assigned variables in the model, casual inference on the response is limited to only lane and the other are non casual. Causal inferences can be made on the all of the racers that fit the criteria above except for the ones that did not finish, as they were removed.** 
+
+
+
+## Splitting the data into training and test:
+
+The following code will split the data set into training and test versions for future uses. **For the rest of the lab, you will be working with the `traindata` object.**
+
+```{r}
+set.seed(1234)
+traindata <- mresR %>% slice_sample(prop = 0.8)
+testdata <- anti_join(mresR, traindata)
+tally(testdata)
+dim(testdata)
+```
+
+*2) What is the sample size in the training and test data sets after the split and what proportion went into each?*
+166 and 32
+
+
+*3) Refit models m1, m2, and m3 using the training data, as well as fitting a mean-only model (rename each model so we don't accidentally mix them up). Then generate an AIC table using the `model.sel(..., ..., ..., ..., rank = "AIC")` function on the four models. Plot the table of results using `ggdredgeplot`. No discussion (yet).*
+
+
+```{r}
+tm_only <- lm(mark1~1, data = traindata)
+tm1 <- lm(mark1 ~ pb + reactiontime + lane + wind1, data = traindata)
+tm2 <- lm(mark1 ~ sb + reactiontime + lane + wind1, data = traindata)
+tm3 <- lm(mark1 ~ pb + sb + reactiontime + lane + wind1, data = traindata)
+
+ggdredgeplot(model.sel(tm_only, tm1, tm2, tm3, rank = "AIC"))
+
+
+```
+
+*4) Based on the AIC results, discuss the top model and strength of evidence/support for that model versus each of the others. Be specific about the contents of the models you are comparing when you make these comparisons. And make sure to include a comparison of that result to the mean-only model and what that tells you in particular about the top model. Do not use model names in the discussion, use the contents of the models.*
+
+**Model tm3 with pb, reaction time, lane, and wind was the best model. tm3 has an AIC of -49.0 while the next best model has an AIC of -38.7.**
+
+
+*5) Now are going to consider dredging the "full" model we fit above to see if we missed anything with just exploring models with different versions of previous performance as predictors (or both). Run the `dredge` function on the training data version of m3 that you fit, sorting on AIC values. Pass the results from dredging that model to `ggdredgeplot` and try out `ggdredgeplotly` and print out the results with delta less than 25. How many total models were explored by dredge? Based on these results: What variables are in the top and second best AIC model and how can you explain their respective DF (no evidence discussion needed)?*
+
+
+```{r}
+library(cetcolor)
+library(ggrepel)
+library(plotly)
+options(na.action = "na.fail")
+og <- dredge(tm3)
+dim(og)
+ggdredgeplot(dredge(tm3))
+cond1 <- subset(dredge(tm3), delta < 25)
+ggdredgeplotly(cond1)
+
+
+
+```
+**32 models were explored. The top model has pb, reaction time, sb, and wind (AIC = -57.8). The df = 6, because of the intercept, four variables, and the error term.  The next best model has lane, pb, reaction time, sb, and wind (AIC = -48.4). The df = 14 bc the lane (9 lanes, 9-1 = 8) is added.**
+
+
+*6) The following code creates 5 variables that are not related to the response (v1 to V5), fits a model called `mextra`, and dredges that model. What is contained in the top model and what is surprising about the top AIC model?*
+
+```{r}
+set.seed(407)
+library(mvtnorm)
+options(na.action = "na.fail")
+addedxs <- as.data.frame(rmvnorm(n = 662, mean = rep(0,5)))
+trainingdata2 <- cbind(traindata, addedxs)
+
+mextra <- lm(mark1 ~ pb + sb + reactiontime + wind1 + lane + V1 + V2 + V3 + V4 + V5, data = trainingdata2)
+dres2 <- dredge(mextra, rank = "AIC")
+dim(dres2)
+subset(dres2, delta < 6)
+ggdredgeplotly(dres2)
+```
+**The top model contains pb, reaction time, sb, v1, v5, and wind with an AIC = -62.9. The top model contains two of the v variables, although they are unrelated. 'Threw some junk in'**
+
+*7) Fit the top model using `trainingdata2` and generate tests for all the terms in the model using `Anova`. Following up on the previous question, what is the most intriguing result? Also, explain what this question attempts to demonstrate, i.e., why we should not do what we did for this question after completing the previous model selection process.*
+
+```{r}
+last1 <- lm(mark1 ~ pb + reactiontime + sb + wind1 + V1 + V5, data = trainingdata2 )
+Anova(last1)
+```
+**The p value for for V1 is <0.05. This value is unrelated to the rest of the df. While we should not compare AIC and p values, this tells us that dredge, when given junk in the model, will fit the 'best'. Above, we ran 1024 models. It is highly likely that the actual best fit model is in there, but we cannot see it.**
+
+*8) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question.*
