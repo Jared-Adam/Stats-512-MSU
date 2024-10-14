@@ -1,0 +1,149 @@
+---
+title: "STAT X12 HW 6"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+install.packages('janitor')
+library(janitor)
+library(readxl)
+library(catstats2)
+library(ggResidpanel)
+library(mosaic)
+library(easyalluvial)
+library(mi)
+library(betareg)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules:
+
+You are required to complete this in groups, but will get a 3% bonus if you work in a group of between 2 and 4 that contains at least one pair that has not completed a homework together with previously. Make sure you document this new pairing in the collaboration/resources question. **If you have collaborative discussions with colleagues outside your group, you must add that information.**
+
+## Vegetation density in a complex field experiment
+
+In Uselman et al. (2018), they conducted an experiment to study different factors that might impact restoration of agricultural fields. The study design is quite complex and we will need some additional discussions to fully understand "split-split plot randomized complete block designs" and how to model them (it is coming though). For now, we will be working with just the data from the "South" field in May 2017, so you can read about their study design with that target in mind. We will be working with the "Grass Density" response and predictors of "Seeding Strategy",  "Irrigation", and "Grass Origin" on this homework. Figure 2 does a pretty good job of describing the study design and these predictor variables.
+
+* Uselman SM, Davison J, Baughman OW,
+Sullivan BW, Miller WW, Leger EA (2018)
+Restoring dryland old fields with native shrubs and
+grasses: Does facilitation and seed source matter?
+PLoS ONE 13(10): e0205760. https://doi.org/
+10.1371/journal.pone.0205760
+
+
+We will generally be doing some work related to the model that they discuss in Table 3 (part iii) on their "South" field for their 2017 data, although we need some additional discussions to fully appreciate all that they did. They note that they used `log(y + 0.025)` or `sqrt(y + 0.25)` for the some of their density measurements (see Page 9 for more details), which started as counts of grass or shrubs per meter squared (which came from counting grass in the quadrats). The original information on the counts is not available and the size and number of quadrats searched changed across observations, so we can't get back to the counts to use Poisson models here. But it is important to note that this was a count variable and would be better modeled that way if we had the original information.
+
+```{r}
+Uselman <- read_csv("Uselman_data.csv", na = "-")
+UselmanR <- Uselman %>% dplyr::filter(Site == "South") %>% 
+  mutate(Date = factor(Date)) %>%
+  dplyr::filter(Date == "17-May") %>% 
+  mutate(SeedingStrat = factor(SeedingStrat),
+         Irrigation = factor(Irrigation),
+         GrassOrig = factor(GrassOrig),
+         Blockf = factor(Block),
+         logGrassDens25 = log(GrassDens2017 + 0.025),
+         logGrassDens = log1p(GrassDens2017))
+
+dim(UselmanR)
+image(missing_data.frame(as.data.frame(UselmanR)))
+UselmanR2 <- UselmanR %>% drop_na(GrassOrig) 
+dim(UselmanR2)
+
+UselmanR2 <- UselmanR2 %>%  mutate(SeedingStrat = factor(SeedingStrat),
+         Irrigation = factor(Irrigation),
+         GrassOrig = factor(GrassOrig))
+
+```
+
+
+**1) Explain what happened to the sample size in `UselmanR2 <- UselmanR %>% drop_na(GrassOrig)`. Given the definitions of Seeding Strategy and Grass origin, how can you explain this?**
+
+*Not all treatments have grass.*
+
+**2) You can find the `log(y + 0.025)` transformed grass density in the set up code. Use the new variable to make an interaction plot array versus the Seeding Strategy and Irrigation using `UselmanR`. Comment on the potential for an interaction and the specific pattern that you see.**
+
+```{r}
+ggintplot(response = 'logGrassDens25', groupvars = c('SeedingStrat', 'Irrigation'), data = UselmanR)
+
+
+```
+**Differences in differences irrigation type and seeding strategy I and IV. This alludes to the potential of a potential interaction.**
+
+**3) Make a table of the counts of observations at the combinations of seeding strategy and irrigation type in `UselmanR`. Is this a balanced design for these variables as we are using them? Report your answer in a single sentence along with reporting the least frequently observed combination and most frequently observed and total sample size for this part of the analysis. **
+
+
+```{r}
+alluvial_wide(data = UselmanR %>% dplyr::select(Blockf, SeedingStrat, Irrigation), fill_by = "last_variable")
+tally(SeedingStrat ~ Irrigation, data = UselmanR)
+dim(UselmanR)
+
+```
+*Looking at the alluvial figure, I would say I have no idea. Looking at the tally output, seeding strategy I and II have the highest frequencies while III, IV, V have the lowest frequencies. The total sample size is n = 84.*
+
+
+**4) Fit an interaction model and report an evidence sentence reporting the test of interest in this model for the log(GrassDen2017 + 0.025) response with Seeding Strategy and Irrigation in `UselmanR`, making sure to include your conclusion about the interaction and recommendation for keeping/removing the interaction.**
+
+
+```{r}
+m1 <- lm(logGrassDens25 ~ SeedingStrat*Irrigation, data = UselmanR)
+Anova(m1)
+summary(m1)
+resid_panel(m1, "R")
+```
+
+**The F statistic for the interaction model is F(4,74) = 2.6, P = 0.04. With this, there is moderate evidence to reject the null hypothesis of no interaction in the model and keep the interaction term.**
+
+**5) The interaction model you fit above provides the following estimated model that we started writing out for you. Fill in the final (XXXX) coefficients to complete writing out the estimated model **
+
+* $\hat{\mu}\{LogGrass25|SeedingStrat \ast Irrigation\} = 0.904 - 0.972I_{Seed = II} - 3.269I_{Seed = III} - 3.66I_{Seed = IV} - 2.349I_{Seed = V} - 1.478I_{Irrigation = Spring} + 1.3903 I_{Seed = II}I_{Irrigation = Spring} + 1.1812 I_{Seed = III}I_{Irrigation = Spring} + 2.7698 I_{Seed = IV}I_{Irrigation = Spring} + 1.2281 I_{Seed = V}I_{Irrigation = Spring}$
+
+* where $I_{Seed = II}$ is 1 when a seed strategy II is encountered and 0 otherwise, the other three indicators for seeding strategy are defined similarly, and $I_{Irrigation = Spring}$ is 1 when a spring only irrigation observation is encountered and 0 otherwise.
+
+
+**Use the estimated model to produce the estimates of the mean log(GrassDensity + 0.025) for the following three combinations, showing your work:** 
+
+* For Seeding Strategy I and a Fall-Spring Irrigation:  $\hat{\mu} = 0.904$
+    
+* For Seeding Strategy II and a Fall-Spring Irrigation: $\hat{\mu} = 0.904 - 0.972I_{Seed = II} = -0.068$  
+
+* For Seeding Strategy III and Spring Irrigation:$\hat{\mu} = 0.904 - 3.269I_{Seed = III} - 1.478I_{Irrigation = Spring} + 1.1812 I_{Seed = III}I_{Irrigation = Spring} = 0.904 - 3.269 - 1.478 + 1.1812 = -2.6618$
+
+**6) The authors actually used a square-root transformation of the response for this model to "to meet the assumptions of homogeneity of variances and normal distribution of residuals". The following code creates that variable and re-fits the previous model to this new response variable. Note that their results came from a more complex model with fewer observations, so might have looked different. But suppose their statement came after reviewing the following diagnostic plots. Discuss their claim as it applies to this model.**
+
+```{r}
+UselmanR <- UselmanR %>% mutate(sqrtGrassDens25 = sqrt(GrassDens2017 + 0.25))
+lm3 <- lm(sqrtGrassDens25 ~ SeedingStrat*Irrigation, data = UselmanR)
+resid_panel(lm3, "R")
+```
+**This QQ plot is heavy tailed and does not meet the assumption of Normality in the distribution. In the residual vs fitted plot, there appears to be a violation of HOV due to the imbalance of observations at each group.**
+
+**7) Make an effects plot with partial residuals for the previous model. What information does this provide in terms of understanding the previous issues with the model? Hint: you may also want to do some explorations of the original version of the response to help you answer the question.**
+
+```{r}
+plot(allEffects(lm3, residuals = T), grid = T)
+```
+**The number of observations for seeding strategy I and II are double that of III-V. This imbalance could be leading the heavy tail of the QQ plot and the lack of HOV observed in the Residual vs. Fitted plot.**
+
+**8) Discuss the independence assumption for the interaction model we fit.**
+
+**There is a violation of independence because block, plot, and subplot are not accounted for. This could cause pseudo replication issues.**
+
+**9)  Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question. Also document if you had any new pairings in the group for the potential bonus.**
+
