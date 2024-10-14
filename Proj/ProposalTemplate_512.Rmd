@@ -59,10 +59,10 @@ clean21 <- s21 %>%
                 treatment != '8') %>% 
   mutate_at(vars(1:6), as.factor) 
 
-ggplot(clean21, aes(x = location, y = to.predated))+
-  geom_point()+
-  geom_violin()+
-  facet_wrap(~growth_stage)
+# ggplot(clean21, aes(x = location, y = to.predated))+
+#   geom_point()+
+#   geom_violin()+
+#   facet_wrap(~growth_stage)
 
 
 # 2022 cleaning 
@@ -79,10 +79,10 @@ clean22 <- s22 %>%
   # dplyr::summarise(total = sum(to.predated)) %>% 
   mutate_at(vars(1:6), as.factor)
 
-ggplot(clean22, aes(x = location, y = to.predated))+
-  geom_point()+
-  geom_violin()+
-  facet_wrap(~growth_stage)
+# ggplot(clean22, aes(x = location, y = to.predated))+
+#   geom_point()+
+#   geom_violin()+
+#   facet_wrap(~growth_stage)
 
 # 2023 cleaning 
 
@@ -103,10 +103,10 @@ clean23 <- s23 %>%
   filter(treatment != 5) %>% 
   mutate_at(vars(1:6),as.factor)
 
-ggplot(clean23, aes(x = location, y = to.predated))+
-  geom_point()+
-  geom_violin()+
-  facet_wrap(~growth_stage)
+# ggplot(clean23, aes(x = location, y = to.predated))+
+#   geom_point()+
+#   geom_violin()+
+#   facet_wrap(~growth_stage)
 
 # and in the darkness, bind them 
 sent <- rbind(clean21, clean22, clean23)
@@ -126,15 +126,14 @@ These data come from the Precision Sustainable Agriculture effort through the US
 **Treatments** = 4; No cover crop, early-terminated cover crop, late-terminated cover crop, planting green
 **Plots** = 20; 5 blocks composed of 4 plots each = 20 plots / study site / year
 **Years** = 3 (2021,2022,2023)
-**Locations** = This project comprises 16 states. Not all states collected sentinel prey data every year. 
+**Locations** = This project comprises 16 states. Not all states collected sentinel prey data every year. Each site year was in a different field. 
 **Effort** = Data were collected at three corn growth stages / year (V3,V5,R3).
 **Sample** = 6 sentinel prey traps were placed in each plot = 120 samples collected / growth stage. Total sample effort per state per season = 360 samples. 
 
 **Variables:**
-**Response** = Total level of predation. This is transformed into a proportion over a constant total. Binomial response
-**Explanatory** = Crop growth stage (timing, three levels) and treatment (four levels). 
-**Random effects** = Block and location? I am unsure how to use location. I am not interested in seeing how each state differs in the analysis because that is *not* a research question. I plan to go through and conduct each state's own analysis later.
-**Repeated measure** = I visit the same trap three times throughout the year. This feels like a term I should identify. If I were to choose, I would select *growth stage*. 
+**Response** = Total level of predation. This is a binomial of 6 traps/ counts per plot. Pseudoreplication is account for in the random term. 
+**Explanatory** = Crop growth stage (timing, three levels) and treatment (four levels). I am not interested in the fixed effects of location. 
+**Random effects** = Plot in block in location, in year. I want to account for pseduoreplication and all of the site/year combinations.
 
 Plots were randomly assigned to each block. Field sites were as random as they could be at each respective research station. Sentinel prey traps were placed between pre-determined rows and at specific length intervals within each plot to maintain consistency. 
 
@@ -161,21 +160,14 @@ image(tdf)
 library(ggmosaic)
 sent %>% 
   ggplot() +
-  geom_mosaic(aes(x = product(to.predated)))+
+  geom_mosaic(aes(x = product(treatment), fill = to.predated))+
   facet_wrap(~growth_stage)+
-  scale_fill_colorblind()
+  scale_fill_colorblind()+
+  labs(title = 'Mosaic plot of Predation by Treatment and Growth Stage',
+       y = 'Density',
+       x = ' Treatment')
 
-sent %>% 
-  ggplot() +
-  geom_mosaic(aes(x = product(to.predated)))+
-  facet_wrap(~treatment)+
-  scale_fill_colorblind()
 
-sent %>% 
-  ggplot() +
-  geom_mosaic(aes(x = product(to.predated)))+
-  facet_wrap(~location)+
-  scale_fill_colorblind()
 ```
 
 
@@ -183,25 +175,20 @@ sent %>%
 
 ```{r}
 sent
-nr_m1 <- glm(to.predated ~treatment*growth_stage + location, family = binomial, data = sent)
+nr_m1 <- glm(to.predated ~treatment*growth_stage,family = binomial, data = sent)
 summary(nr_m1)$coefficients
 confint(nr_m1)
-
-plot(allEffects(nr_m1), type = 'link', ylab = 'estimated log differnces in total predation')
-plot(allEffects(nr_m1), type = 'response', ylab = 'estimated probability differnces in total predation')
-
-Anova(nr_m1)
 
 # Adding random effects
 # This is now a random intercept, fixed slope model
 
-m1 <- glmer(to.predated ~ treatment*growth_stage + location + (1|year), family = binomial, data = sent)
-summary(m1)
-coef(m1)$year
-Anova(m1)
-
-m2 <- glmer(to.predated ~ treatment*growth_stage + location + (1|year) + (1|year:block) + (1|year:block:plot_id) , family = binomial, data = sent)
+m2 <- glmer(to.predated ~ treatment*growth_stage + (1|year/location/block/plot_id) , family = binomial, data = sent)
 summary(m2)
+
+Anova(m2)
+
+plot(allEffects(m2), type = 'link',ylab = 'estimated log differnces in total predation')
+plot(allEffects(m2), type = 'response', ylab = 'estimated probability differnces in total predation')
 
 
 
