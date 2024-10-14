@@ -187,8 +187,8 @@ summary(m2)
 
 Anova(m2)
 
-plot(allEffects(m2), type = 'link',ylab = 'estimated log differnces in total predation')
-plot(allEffects(m2), type = 'response', ylab = 'estimated probability differnces in total predation')
+plot(allEffects(m2), type = 'link',ylab = 'estimated log differnces in total predation', grid = T)
+plot(allEffects(m2), type = 'response', ylab = 'estimated probability differnces in total predation', grid = T)
 
 
 
@@ -198,39 +198,18 @@ plot(allEffects(m2), type = 'response', ylab = 'estimated probability differnces
 
 ```{r}
 # table as a proportion 
-all_locs <- sent %>% 
+sent %>% 
   group_by(location, treatment, growth_stage) %>% 
-  dplyr::summarise(prop = mean(to.predated),
-                   sd = sd(to.predated),
-                   n = n(), 
-                   se = sd/sqrt(n))
+  summary()
 
-by_trt <- sent %>% 
-  group_by(treatment) %>% 
-  dplyr::summarise(prop = mean(to.predated),
-                   sd = sd(to.predated),
-                   n = n(), 
-                   se = sd/sqrt(n))
-by_trt
-
-by_growth <- sent %>% 
+sent %>% 
   group_by(growth_stage) %>% 
-  dplyr::summarise(prop = mean(to.predated),
-                   sd = sd(to.predated),
-                   n = n(), 
-                   se = sd/sqrt(n))
-by_growth
+  summary()
+
+
+tally(treatment ~ growth_stage, data = sent)
 
 ```
-
-7a) Comparing my old way of summary stats with yours. Which do I like more?
-```{r}
-datasummary(treatment + growth_stage ~ to.predated, data = sent, output = 'markdown')
-
-
-```
-**I do not think this is great for binary data.**
-
 8) Provide the names of feedback group members and the date, time, and location of your feedback session interaction.
 
 
