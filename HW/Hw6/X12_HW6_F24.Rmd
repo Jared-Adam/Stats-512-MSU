@@ -18,7 +18,6 @@ library(ggthemes)
 library(tidyverse)
 library(car)
 library(effects)
-install.packages('janitor')
 library(janitor)
 library(readxl)
 library(catstats2)
@@ -84,7 +83,7 @@ ggintplot(response = 'logGrassDens25', groupvars = c('SeedingStrat', 'Irrigation
 
 
 ```
-**Differences in differences irrigation type and seeding strategy I and IV. This alludes to the potential of a potential interaction.**
+**For the top left plot, there are smaller differences in differences irrigation type and seeding strategy for II, III, and V, alluding to the potential for an interaction. The bottom right plot displays a minimal change in mean for II, III, V, again indicating a potential interaction.**
 
 **3) Make a table of the counts of observations at the combinations of seeding strategy and irrigation type in `UselmanR`. Is this a balanced design for these variables as we are using them? Report your answer in a single sentence along with reporting the least frequently observed combination and most frequently observed and total sample size for this part of the analysis. **
 
@@ -108,7 +107,7 @@ summary(m1)
 resid_panel(m1, "R")
 ```
 
-**The F statistic for the interaction model is F(4,74) = 2.6, P = 0.04. With this, there is moderate evidence to reject the null hypothesis of no interaction in the model and keep the interaction term.**
+**There is moderate evidence to reject the null hypothesis that of no interaction between Irrigation and Seeding Strategy for their impacts on grass density (F(4,74) = 2.640, p-value = 0.04038), therefore we will keep the interaction term included in the model.**
 
 **5) The interaction model you fit above provides the following estimated model that we started writing out for you. Fill in the final (XXXX) coefficients to complete writing out the estimated model **
 
@@ -143,7 +142,7 @@ plot(allEffects(lm3, residuals = T), grid = T)
 
 **8) Discuss the independence assumption for the interaction model we fit.**
 
-**There is a violation of independence because block, plot, and subplot are not accounted for. This could cause pseudo replication issues.**
+**There is a violation of independence because block, plot, and subplot are not accounted for. This could cause pseudoreplication issues.**
 
 **9)  Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question. Also document if you had any new pairings in the group for the potential bonus.**
 
