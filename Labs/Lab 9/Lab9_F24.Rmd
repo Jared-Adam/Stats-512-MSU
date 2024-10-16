@@ -1,0 +1,201 @@
+---
+title: "Lab 9"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: "DO NOT INCLUDE NAMES - Just add names in gradescope"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+library(modelsummary)
+library(ggmosaic)
+library(ggResidpanel)
+library(MuMIn)
+library(ggrepel) #needed for ggdredgeplot
+library(easyalluvial)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules
+
+In groups of 2 to 4, complete the following. Individual submissions are not allowed and will get a 0 without prior approval to work alone.
+
+# Sprinting Speed Two-Way ANOVAs
+
+In my new book, I discuss a study of 100 meter sprint times in the first round of major track and field events, where the runners are randomly assigned to the lane they run in. Munro (2022) explored role of the lane of the runner on the total time to run the event (in seconds).
+
+* Citation: Munro D (2022) Are there lane advantages in track and field? PLoS ONE 17(8): e0271670. https://doi.org/10.1371/journal.pone.0271670
+
+For this lab, you will be exploring the sprint speeds in the men's division - I explored the results for the women's division in Chapters 1 and 2 of my book.
+
+**Note that the data set will differ for today's lab than the previous one!**
+
+```{r}
+data(full100results)
+full100results <- full100results %>% mutate(
+  lane = factor(lane),
+  country = factor(country),
+  athlete = factor(athlete),
+  meet = factor(meet),
+  event = factor(event),
+  Division = factor(Division))
+
+m100results <- full100results %>% filter(Division == "Men")
+
+mresR <- m100results %>% drop_na(mark1, reactiontime)
+
+View(mresR %>% dplyr::filter(mark1>12.6))
+
+mresR2 <- mresR %>% dplyr::filter(mark1<13.2)
+
+mresR2 <- mresR2 %>% mutate(Year = as.numeric(str_sub(meet, start = 1, end = 4)),
+                            YearG = factor(case_when(
+                              Year %in% (2000:2004) ~ "2000sEarly",
+                              Year %in% (2005:2009) ~ "2000sLate",
+                              Year %in% (2010:2014) ~ "2010sEarly",
+                              Year %in% (2015:2020) ~ "2010sLate")),
+                            LaneG = factor(case_when(
+                              lane %in% (1:3) ~ "Lane1to3",
+                              lane %in% (4:6) ~ "Lane4to6",
+                              lane %in% (7:9) ~ "Lane7to9"))
+)
+
+tally(Year ~ lane, data = mresR2)
+```
+
+
+**1) What does the code `filter(mark1<13.2)` do?**
+
+* Keeps any rows of data where mark1 is less than 13.2. These high values influence the model. 
+
+
+**2) Read the help for `str_sub`. What does this function do and what did we use it for?**
+```{r}
+
+?str_sub
+
+```
+
+* Extracts or replaces the elements at a single position in each string.In this example, we are extracting the numeric component of the meet column that contains 4 numeric values (e.g., 2001) and then coercing the new year variable into groups based on the range. 
+
+**3) Based on the `tally` results, can we estimate and test for an interaction of `lane` and `Year` if both are treated as factor variables? Why or why not? How could you tell?**
+
+* No because 0s in the lanes. We need at least all to be 1 and at least one to be 2. We do not have enough information for the error term.
+
+**4) What aspects of the model summary reinforce the previous issue when we try to fit the model `mNot`?**
+
+
+```{r}
+mresR2 <- mresR2 %>% mutate(YearF = factor(Year))
+mNot <- lm(mark1 ~ YearF*lane, data = mresR2)
+summary(mNot)
+```
+* All of the undefined coefficients do not have enough information. This relates to the missing values in the tally. IF the sample size is 0 or 1, we cannot estimate the mean. 16 terms which matches the tally count of 0s and 1s.
+
+**5) Review page 10 of the Ch 13 notes. How many DF should there be for the numerator of the F-statistic for the interaction here? What is actually shown?**
+
+```{r}
+length(levels(mresR2$lane))
+length(levels(mresR2$YearF))
+Anova(mNot)
+
+(19-1)*(9-1)
+```
+* 144 - 16 = 128. The values of 0 and 1 account for the missing coefficients in the model. The DF we should see is 144.
+
+**6) What are in the `LaneG` and `YearG` variables?**
+
+```{r fig.width = 12, fig.height = 6}
+p1 <- alluvial_wide(data = mresR2 %>% dplyr::select(lane, LaneG), fill_by = "first_variable")
+p2 <- alluvial_wide(data = mresR2 %>% dplyr::select(YearF, YearG), fill_by = "first_variable")
+p1 + p2
+```
+* These are just bins of year and lane that are grouped into 3 for lane and 4 for year.
+
+**7) Based on the following alluvial diagram and contingency table, can we estimate and test for an interaction of `LaneG` and `Year` if both are treated as factor variables? Is it a balanced design?**
+
+```{r}
+alluvial_wide(data = mresR2 %>% dplyr::select(YearG, LaneG), fill_by = "first_variable")
+tally(LaneG ~ YearG, data = mresR2)
+```
+
+* These factor variables are balanced enough and we can use these variables because all groups are greater than 1 and at least is greater than 2.
+
+**8) Make an interaction plot with `ggintplot` for `LaneG` and `YearG` for `mark1`. Discuss the the interaction of these two variables on the response, first by discussing the pattern of the interaction (focus on the means) and then the potential for an interaction (focus on the size of differences in the means "relative" to the uncertainty in those means).**
+
+
+```{r fig.width = 10, fig.height = 10}
+ggintplot(response = "mark1", groupvars = c("LaneG", "YearG"), data = mresR2)
+
+```
+
+* For the top left, the early 2000s estimated mean of 100 m time increases in lanes 4-6 relative to the other two groups For lane groups 1-3 and 7-9, the estimated mean of 100 times appear to be similar. The early and late 2010s 100 meter estimated mean times increase (slower) from lane 4-6 to 7-9 (middle to outside lanes). When looking in the bottom right, we see an increase in the 100 m time from the 2000s to the 2010s groups.
+
+**9) Generate and report a test for an interaction of `YearG` and `LaneG` on `mark1`. Just report the test statistic, distribution under the null hypothesis, and p-value.**
+
+```{r}
+m1 <- lm(mark1 ~ YearG*LaneG, data = mresR2)
+Anova(m1)
+```
+* We found strong evidence to accept the null hypothesis of no interaction between yearg and laneg on 100 meter time F = (6,815) = 1.07, p = 0.38. We will remove the interaction term from the model and refit an additive model.
+
+
+**10) Re-fit the model without an interaction, generate an ANOVA table, and complete the following evidence sentence for the `LaneG` test in the model.**
+
+```{r}
+m2 <- lm(mark1 ~ YearG + LaneG, data = mresR2)
+Anova(m2)
+```
+
+* There is strong evidence against the null hypothesis of no difference in the true mean 100 m men's sprint times across the three lane groups (F(2, 821) = 3.51, p-value = 0.03), controlled for YearG, so we conclude that there is some difference in the lane group and would retain the lane group variable in the model.
+
+
+**11) Now that we have the year of the events available and two versions of the lane and year groups, develop a research question related to `mark1` that includes the year or year groups of the event and an interaction of it with another predictor. Then make a plot of `mark1` that addresses your RQ. _You can skip improved axis labels and a title for time purposes._ Discuss how your plot helps you address your RQ and what it might suggest about the RQ.**
+
+* Define RQ: Does the effect of reaction time and year group influence the 100 meter men's time?
+
+* Make plot
+
+```{r fig.width = 12, fig.height = 12}
+ggintplot(response = "mark1", groupvars = c("reactiontime", "YearG"), data = mresR2)
+
+mresR2 %>% 
+  ggplot(aes(x = reactiontime, y = mark1))+
+  geom_point()+
+  facet_wrap(~YearG)+
+  geom_smooth(method = 'lm')
+```
+
+* Discuss how plot addresses RQ: These plots show how 100 meter times change based on the reaction time and year group. 
+
+* Discuss what plot suggests about RQ: These plots suggest there is a potential interaction that as reaction time increases, so too does 100 meter time based on YearG. The slopes of these plots also appear to differ. 
+
+**12) Fit your proposed model and generate a test for your proposed interaction and make an effects plot for the model. Report the test statistic, distribution under the null, and p-value for your test. No evidence sentence.**
+```{r}
+m3 <- lm(mark1 ~ reactiontime*YearG, data = mresR2)
+Anova(m3)
+
+```
+* F(3,819) = 2.54, p = 0.0553. 
+
+
+**13) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question.**

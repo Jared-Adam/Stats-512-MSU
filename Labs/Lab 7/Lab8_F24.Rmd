@@ -83,6 +83,8 @@ Anova(m3)
 
 **The aspects of this paper used to model if lane predicts the outcome of racers using data from the men's U20 division world division of racers from 2000-2019. Lane assignment was random during the first round, and thus, with lane alone, we have causal inference. But personal best, reaction time, and wind cannot be randomly assigned, so we cannot have causal inference on the response. We can potentially infer how lane influences the response, but with other non-randomly assigned variables in the model, casual inference on the response is limited to only lane. Causal inferences can be made on the all of the racers that fit the criteria above except for the ones that did not finish, as they were removed.** 
 
+**Addition: Lane is was randomly assigned so the impacts could be causal, but changes based on the other non randomly assigned variables.**
+
 
 
 ## Splitting the data into training and test:
