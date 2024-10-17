@@ -1,0 +1,174 @@
+---
+title: "HW 7"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: "DO NOT INCLUDE NAMES - Just add names in gradescope"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+library(modelsummary)
+library(gtsummary)
+library(ggmosaic)
+library(ggResidpanel)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules
+
+In groups of 2, 3, or 4, complete the following. Individual submissions are not allowed and will get a 0 without prior approval to work alone.
+
+# Predictive Models for log-pCO2
+
+
+This homework continues to analyze the data set from Que et al. (2017) from HW 4 and continues to exclude the Indus river observations that they mentioned.
+
+```{r}
+library(readxl)
+riverdata <- read_excel("Qu_etal_2017.xlsx")
+riverdataR <- riverdata %>% dplyr::filter(River != "Indus") %>%
+  mutate(logpCO2 = log(pCO2))
+```
+
+* The following model considers the same model we looked at previously for log-partial CO2, but also controls for a suite of other characteristics of the river sites that include the stream order (https://en.wikipedia.org/wiki/Stream_order - not sure which version they used, but higher order streams are further from the main channel), velocity of the river at the site (meters per second), slope of the site  (unitless), and hydraulic flux (K in meters per day - or at least I think that is what this variable is...).
+
+
+```{r fig.width = 8, fig.height = 6}
+riverdataR <- riverdataR %>% mutate(StreamOrderF = factor(StreamOrder))
+lmZ1 <- lm(logpCO2 ~ River + Elevation + StreamOrder + Velocity + Slope + k_mperd, data = riverdataR)
+lmZ2 <- lm(logpCO2 ~ River + Elevation + StreamOrderF + Velocity + Slope + k_mperd, data = riverdataR)
+
+plot(allEffects(lmZ1, residuals = T))
+resid_panel(lmZ1, "R")
+
+plot(allEffects(lmZ2, residuals = T))
+resid_panel(lmZ2, "R")
+```
+
+
+1) Discuss the linearity assumption as it pertains to the stream order variable in `lmZ1` using the partial residuals and compare that to what the model assumes about that same variable in the `lmz2` model. 
+
+
+
+```{r}
+vif(lmZ1)
+```
+* Based on the vif results, it appears that the slope and k_mperd variables may have high collinearity. Both of these values fall above 2. Additionally, Elevation has a GVIF of 2.8, which shows moderate evidence of collinearity. 
+
+
+2) Finish the second sentence that assesses the multicollinearity issues in the `lmZ1` model.
+
+* There are some issues with multicollinearity in the model with VIFs of 2.8, 3.5, and 4.43 for elevation, slope, and hydraulic conductivity and the River GVIF that implies an SE inflation of 1.24, suggesting moderate amounts of shared information in the model. Specifically for the hydraulic conductivity (`k_mperd`), the SE for it is 2.104.
+
+
+3) Suppose that you are considering a step-down p-value-based model selection approach for `lmZ2`. Report the first choice you would make and report an evidence sentence for that result.
+
+```{r}
+Anova(lmZ2)
+```
+* With the p-value approach, the first variable to be dropped will be Slope F(1,21) = 0.09, p = 0.76. There is strong evidence that the Slope variable does not influence the logpCO2 response variable and should be dropped. 
+
+4) Re-fit the model with the term dropped from the previous question and again make a choice about the next term to drop. This time just report the term you would drop, the test statistic details, and the p-value.
+
+```{r}
+lmZ3 <- lm(logpCO2 ~ River + Elevation + StreamOrderF + Velocity + k_mperd, data = riverdataR)
+Anova(lmZ3)
+```
+* With the p-value approach, the next variable to be dropped is hydraulic conductivity (k_mperd) F(1, 22) = 0.14, p = 0.714. There is strong evidence that this variable does not influence the logpCO2 response variable and should be dropped. 
+
+
+
+5) After further steps in the model refinement, I ended up with model `lmZ5`. Write out the estimated model, defining any indicator variables used.
+
+```{r}
+lmZ5 <- lm(logpCO2 ~ River + Elevation + StreamOrderF, data = riverdataR)
+summary(lmZ5)
+lmZ5 %>% tbl_regression(intercept = T)
+```
+
+* $\hat{\mu}\{logpCO2|River,Elevation,StreamOrderF\} = 8.0 -0.68I_{River = YT} - 0.2I_{River = Y} + 0.00_{Elevation} - 0.41I_{StreamOrderF = 2} - 0.25I_{StreamOrderF = 3}$
+
+* where River YT = 1, unless otherwise specified as 0
+* where River Y = 1, unless otherwise specified as 0
+* where Stream Order 2 = 1, unless otherwise specified as 0
+* where Stream Order 3 = 1, unless otherwise specified as 0
+
+
+6) The modeling so far did not explore interactions, specifically the potential interaction of `StreamOrderF` and `River`. Generate an interaction plot and a contingency table of counts related to the potential interaction. [Bonus point: make an alluvial diagram of the two variables pertinent to assessing this.] Why would you not be able to fit a model with the interaction here?
+
+
+```{r}
+ggintplot(response = 'logpCO2', groupvars = c('StreamOrderF','River'), data = riverdataR)
+tally(StreamOrderF~River, data = riverdataR)
+alluvial_wide(data = riverdataR %>% dplyr::select(River,StreamOrderF))
+```
+* Based on the three visualizations created, it is clear this data set is not balanced. Looking at the contingency table, there are zeros present. To conduct an interaction, all counts must of at least 1, and one count must be at least 2. Looking at the alluvial diagram, it is clear that the River Yangtze is only associated with stream order 3.  
+
+
+7) Add a comment to each line of code to explain what each line of code does and then revisit making the interaction plot and contingency table using `riverdataR2`. Can you estimate the `River` by `StreamOrderF` interaction in this version of the data set? Why? Is it a balanced design? [Bonus point: make an alluvial diagram to support your answer.] Then write a sentence or two to discuss the potential for an interaction here based on the plot and what the pattern is for that potential interaction if it were determined to be present.
+
+
+```{r}
+riverdataR2 <- riverdataR %>% filter(River != "Yangtze") %>% # filters out the Yangtze river from the df
+  mutate(River = factor(River)) # coercing river column into factor without adding new variable
+alluvial_wide(data = riverdataR2 %>% dplyr::select(River,StreamOrderF))
+tally(StreamOrderF~River, data = riverdataR2)
+
+```
+* Yes, we can now estimate the interaction since the River that was responsible for the zeros in the df has been removed. The contingency table now displays all values of at least 1 and at least one value of 2. It is not perfectly balanced, but an interaction can still be done. 
+
+* Based on the alluvial diagram, we see that the Yellow river is most associated with stream order 2. For the the YT river, there are stronger associations between stream order 1 and 3. This tells us there is the potential for an interaction since the alluvial 'widths' are not the same for all combinations. 
+
+
+8) Generate the test statistic and p-value for assessing evidence related to the interaction in the following model. Report the test statistic, distribution under the null, and p-value.
+
+```{r}
+lmint <- lm(logpCO2 ~ River*StreamOrderF + Elevation, data = riverdataR2)
+Anova(lmint)
+
+```
+* There is weak evidence to reject the null hypothesis of no interaction between river and stream order, F(2,19) = 0.55, p = 0.59, on the response of logpCO2, so we will remove the interaction term from the model. 
+
+
+9) Ignore the previous test statistic and p-value and suppose you had obtained a test statistic of 7.5 for the previous test. You can use the `pf(df1 = X, df2 = X, 7.5, lower.tail = F)` to look up the p-value for the "fake" test statistic value of 7.5. Write an evidence sentence using the p-value you calculate and what that would imply if you had found that in the previous situation as it regards where you think there is an interaction and what you would do next based on that information.
+
+```{r}
+?pf
+pf(df1 = 2, df2 = 19, 7.5, lower.tail = F)
+```
+* There is strong evidence to reject the null hypothesis of no interaction, F(2,19) = 7.5, p = 0.004, on the response of logpCO2, and we will keep the interaction term in the model. 
+
+
+10) Suppose that the researchers retained the interaction in the model to be able to address a chosen research question. The following code generates two predictions from the model. The difference in these predictions is one of the estimated model coefficients in `lmint`. Which coefficient is it? How can you explain why the difference in these two predictions was a coefficient in the model?
+
+
+```{r}
+p1 <- predict(lmint, newdata = data.frame(River = factor("YarlungTsangpo"), Elevation = 3000, StreamOrderF = factor("1")))
+
+p2 <- predict(lmint, newdata = data.frame(River = factor("YarlungTsangpo"), Elevation = 3000, StreamOrderF = factor("2")))
+
+p2-p1
+
+```
+* The estimated coefficient from lmint is for StreamOrderF2. The predicion simulated here takes the estimated coefficient from the YT river when Stream order is 0 and when stream order 1, since stream order is an indicator variable and stream order 1 = 0, unless otherwise specified as 1. In doing so, we are subtracting the intercept of the stream order indicator at river YT from the estimated coefficient of stream order 2 at river YT without correcting for elevation. 
+
+11) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question. 
