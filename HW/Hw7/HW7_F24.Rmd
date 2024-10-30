@@ -72,12 +72,14 @@ resid_panel(lmZ2, "R")
 ```{r}
 vif(lmZ1)
 ```
+* In LMZ2, there is no linearity assumption because we now conducting a two-way anova. LMZ1 is categorical, so there no assumption for linearity. 
+
 * Based on the vif results, it appears that the slope and k_mperd variables may have high collinearity. Both of these values fall above 2. Additionally, Elevation has a GVIF of 2.8, which shows moderate evidence of collinearity. 
 
 
 2) Finish the second sentence that assesses the multicollinearity issues in the `lmZ1` model.
 
-* There are some issues with multicollinearity in the model with VIFs of 2.8, 3.5, and 4.43 for elevation, slope, and hydraulic conductivity and the River GVIF that implies an SE inflation of 1.24, suggesting moderate amounts of shared information in the model. Specifically for the hydraulic conductivity (`k_mperd`), the SE for it is 2.104.
+* There are some issues with multicollinearity in the model with VIFs of 2.8, 3.5, and 4.43 for elevation, slope, and hydraulic conductivity and the River GVIF that implies an SE inflation of 1.24, suggesting moderate amounts of shared information in the model. Specifically for the hydraulic conductivity (`k_mperd`), the SE for it is 2.104 times higher than if it did not have shared information.
 
 
 3) Suppose that you are considering a step-down p-value-based model selection approach for `lmZ2`. Report the first choice you would make and report an evidence sentence for that result.
@@ -105,7 +107,7 @@ summary(lmZ5)
 lmZ5 %>% tbl_regression(intercept = T)
 ```
 
-* $\hat{\mu}\{logpCO2|River,Elevation,StreamOrderF\} = 8.0 -0.68I_{River = YT} - 0.2I_{River = Y} + 0.00_{Elevation} - 0.41I_{StreamOrderF = 2} - 0.25I_{StreamOrderF = 3}$
+* $\hat{\mu}\{logpCO2|River,Elevation,StreamOrderF\} = 8.0 -0.68I_{River = YT} - 0.2I_{River = Y} - 0.0002_{Elevation} - 0.41I_{StreamOrderF = 2} - 0.25I_{StreamOrderF = 3}$
 
 * where River YT = 1, unless otherwise specified as 0
 * where River Y = 1, unless otherwise specified as 0
@@ -132,6 +134,7 @@ riverdataR2 <- riverdataR %>% filter(River != "Yangtze") %>% # filters out the Y
   mutate(River = factor(River)) # coercing river column into factor without adding new variable
 alluvial_wide(data = riverdataR2 %>% dplyr::select(River,StreamOrderF))
 tally(StreamOrderF~River, data = riverdataR2)
+ggintplot(response = 'logpCO2', groupvars = c('StreamOrderF','River'), data = riverdataR2)
 
 ```
 * Yes, we can now estimate the interaction since the River that was responsible for the zeros in the df has been removed. The contingency table now displays all values of at least 1 and at least one value of 2. It is not perfectly balanced, but an interaction can still be done. 
@@ -169,6 +172,6 @@ p2 <- predict(lmint, newdata = data.frame(River = factor("YarlungTsangpo"), Elev
 p2-p1
 
 ```
-* The estimated coefficient from lmint is for StreamOrderF2. The predicion simulated here takes the estimated coefficient from the YT river when Stream order is 0 and when stream order 1, since stream order is an indicator variable and stream order 1 = 0, unless otherwise specified as 1. In doing so, we are subtracting the intercept of the stream order indicator at river YT from the estimated coefficient of stream order 2 at river YT without correcting for elevation. 
+* The estimated coefficient from lmint is for StreamOrderF2. The prediction simulated here takes the estimated coefficient from the YT river when Stream order is 0 and when stream order 1, since stream order is an indicator variable and stream order 1 = 0, unless otherwise specified as 1. In doing so, we are subtracting the intercept of the stream order indicator at river YT from the estimated coefficient of stream order 2 at river YT without correcting for elevation. 
 
 11) Document any resources used outside of your fellow group members and course provided resources. If you do not use any, report "NONE" to get credit for this question. 

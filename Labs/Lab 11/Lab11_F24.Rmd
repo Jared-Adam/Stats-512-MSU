@@ -1,0 +1,197 @@
+---
+title: "Lab 11"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+library(ggResidpanel)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+library(lme4)
+library(lmerTest)
+library(forcats)
+webshot::install_phantomjs(force = T)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Preparation for Lab 11:
+
+* Please review the materials provided in https://rconnect.math.montana.edu/Data_Wrangling/#section-relational-data-with-dplyr
+
+* Pay particular attention to the discussion of `left_join` and think about how we might use it to join your repeated measures of grip strength with the demographics data set.
+
+# Part 1: Grip strength potential interaction:
+
+
+```{r}
+GripStrengthMeasurements <- read_excel("GripStrengthMeasurementsF24.xlsx")
+GS <- GripStrengthMeasurements %>% drop_na(GripStrength)
+tally(Hand~Arm, data = GS)
+```
+
+```{r}
+GS <- GS %>% drop_na(Arm)
+GS <- GS %>% mutate(Arm = forcats::fct_collapse(Arm,
+                                                Up = c("Up", "up"),
+                                                Down = c("Down", "down"),
+                                                "90" = c("90", "90 degree")),
+                    SubjectID = forcats::fct_collapse(SubjectID,
+                                          MDEarl = c("MDEarl","MDEar")),
+                    Arm = factor(Arm),
+                    Hand = factor(Hand),
+                    OrderF = factor(Order)
+)
+tally(~Arm, data = GS)
+
+tally(Arm ~ Hand, data = GS)
+GS %>% dplyr::select(Hand, Arm) %>% alluvial_wide(bin_labels = "mean", fill_by = "last_variable", bins = 6)
+
+GS <- GS %>% mutate(Hand.Arm = factor(str_c(Hand, Arm)))
+
+Spaghetti_GS <- GS %>% ggplot(mapping = aes(x = Hand.Arm, y = GripStrength, group = SubjectID)) +
+  geom_line(alpha = 0.3) +
+  geom_point(aes(color = Order), alpha = 0.7) +
+  scale_color_viridis_c(end = 0.8)
+
+Spaghetti_GS
+Spaghetti_GS %>% ggplotly()
+```
+
+
+**1) What did the `fct_collapse` function do and why was it needed in the previous code?**
+
+* Combines the upper and lowercase values of the same variable. E.g., up and Up to one column. 
+
+
+**2) The addition of the line of code of `webshot::install_phantomjs(force = T)` should allow you to knit with interactive documents, but uncomment in the `ggplotly` lines if that is problematic. Find someone in your group or an observation that looks interesting and track that value across the treatment combinations. Does the subject tend to do better or worse on dominant or non-dominant hand across arm positions? Is there an optimal arm position for either or both hands for that subject? Now, look at the whole plot. What can you say about the differences in grip strength across hands (dominant/non-dominant), arm positions, and subjects?**
+
+* Following PATaller. NDDown had the lowest value, but the others were relatively similar. Down and 90 for the dominant hand were the highest, and the exact same at 122.8 lbs. 90 degree for both hands had high values, and differed by less than a pound (0.8 lbs.). There is not much variation for either arm position of hand. There is a clear difference in subjects across the whole data set, but difference in dominant and non-dominant appear to be minimal. There are exceptions to this. For example, IAGarthBrooks shows a clear decline in strength between dominant and non-dominant. 
+
+
+
+**3) Is this a balanced design relative to the Hand and Arm variables?**
+
+* Technically no, but I would say yes. 
+
+
+**4) Make an interaction plot and discuss the potential for an interaction of Arm and Hand on the Grip Strength responses. If you think there is a potential interaction, discuss the pattern. If you don't think there is a potential interaction, discuss the possible pattern of results in the two enhanced stripcharts that provide a hint about the results for each of the main effects.**
+
+
+```{r fig.width = 10, fig.height = 10}
+ggintplot(data = GS, response = 'GripStrength', groupvars = c('Hand', 'Arm'))
+
+```
+
+* We do not see much evidence of an interaction. The means of hand and arm position are similar. Additionally, the distributions are similar among all positions and both hands, respective of the variable. Based on the distributions, it does not appear there will be a main effect of either hand or position. 
+
+**5) We will dive more deeply into linear mixed models in the coming weeks, but the following code uses the `lmer` function from the `lme4` package (with some modifications from the `lmerTest` package so you can see p-values) to fit a mixed model that incorporates subject as a "random" effect. You can interpret the results for the "fixed" effect (starting with arm and hand and their interaction on grip strength) as "conditional on" or "adjusted for" subject much like we did if it was included as a fixed effect. Report an evidence sentence for the interaction test from the following results and what it suggests for the interaction in the model.**
+
+```{r}
+lmer1 <- lmer(GripStrength ~ Hand*Arm + (1|SubjectID), data = GS)
+Anova(lmer1, test.statistic = "F")
+
+```
+* There is little to no evidence against the null hypothesis of no interaction F(2,114.01) = 1.2018, p = 0.304, controlling for the random effect of subject, and therefore we would not include the interaction in the model. 
+
+**6) An interactive residual panel is available below. Which subject(s) had the largest and smallest observed residuals (so were most above/below what the model predicted for them)? Generally how large/small was the fitted value for the two most extreme residuals?**
+
+
+```{r}
+resid_interact(lmer1, c("resid", "qq", "yvp", "hist"))
+```
+* WATaller had the highest (2.355) residual values and WYJourney had the lowest (-2.64). Both fall in the middle of the distribution of the predicted values.  
+
+## Part II: Merging (`left_join`-ing) the demographics data
+
+The following code will read in and join the demographics data.
+
+```{r}
+dim(GS)
+Demographics <- read_excel("DemographicsF24.xlsx")
+data.frame(sort(unique(GS$SubjectID)), sort(unique(Demographics$SubjectID)))
+```
+
+**7) The following code highlights a potential issue with one of the subject IDs. Fix the problem in the Demographics data.frame using R code.**
+
+
+```{r}
+data.frame(sort(unique(GS$SubjectID)), sort(unique(Demographics$SubjectID)))
+# Fix the problem:
+Demographics <- Demographics %>% mutate(SubjectID = forcats::fct_collapse(SubjectID, 
+                                                                          LADeathGrips = 'LADeath' ))
+
+#Check that problem was fixed:
+data.frame(sort(unique(GS$SubjectID)), sort(unique(Demographics$SubjectID)))
+```
+
+
+```{r}
+Demographics <- Demographics %>% mutate(Weights = factor(Weights)) %>% mutate( 
+                                        Weights = forcats::fct_collapse(Weights,
+                                                              no = c("no", "No"),
+                                                              yes = c("yes", "Yes")))
+
+combined <- left_join(x = GS, y = Demographics, by = "SubjectID")
+
+combinedR <- combined %>% drop_na()
+
+combinedR <- combinedR %>% mutate(forearm_bins   = cut_number(ForearmLength, n = 3),
+                                  epworth_bins = cut_number(Epworth, n = 3),
+                                  balance_bins = cut_number(BalanceTime, n = 3))
+dim(combinedR)
+tally(~SubjectID, data = combinedR)
+```
+
+**8) What is the sample size before and after the `left_join`? How many subjects are in the data set as analyzed in `combinedR`?**
+
+```{r}
+dim(GS)
+dim(combinedR)
+```
+
+* Before the left join the df 'GS' had 143 observations. The new df 'CombinedR' has 137 observations. The new df has 23 subjects because MDEarl had 0 observations was dropped from the df. 
+
+
+**9) Now we can incorporate forearm length into the model using the `forearm_bins, which we will treat as a fixed effect, and consider whether the differences in hand between arm positions on grip strength might change based on the length of the arm. Report an evidence sentence for the hand by arm by forearm bin interaction test.**
+
+```{r}
+lmer2 <- lmer(GripStrength ~ Hand*Arm*forearm_bins + (1|SubjectID), data = combinedR)
+Anova(lmer2, test.statistic = "F")
+plot(allEffects(lmer2), multiline = T, ci.style = "bars")
+```
+* There is some/ moderate evidence against the null that there of no interaction of hand:arm:forearm interaction F(4,99.007) = 2.1716, p = 0.077, conditional of the random effect of subject, and we will keep this term in the model. 
+
+
+**10) What combination of hand, arm, and forearm had the highest estimated mean grip strength based on the model (Hint: review the effects plot)? Based on the following results, what combinations of the three variables is that detectably different from (Hint: use the CLD)?**
+
+```{r}
+m1_em <- emmeans(lmer2, pairwise ~ Hand*Arm*forearm_bins, adjust = "tukey")
+multcomp::cld(m1_em, Letters = LETTERS)
+pwpm(m1_em)
+
+```
+
+* The combination of dominant, up, and length 11, 12.5 had the highest estimated mean of grip strength. 
+* This combination is different from the hand and arm combinations in the two lower forearm bins (i.e., [9.5,10] and [10,11]). In other words, all CLD that does not contain the letter F is different from this combination (i.e., dominant, up, and length bin 11, 12.5). 
+
+
+**11) Note any additional resources used to complete this lab or NONE.**
