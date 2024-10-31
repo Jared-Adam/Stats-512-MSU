@@ -26,6 +26,9 @@ library(catstats2)
 library(effects)
 library(gtsummary)
 library(modelsummary)
+library(ggpp)
+library(multcomp)
+library(emmeans)
 theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 ```
 
@@ -59,11 +62,6 @@ clean21 <- s21 %>%
                 treatment != '8') %>% 
   mutate_at(vars(1:6), as.factor) 
 
-# ggplot(clean21, aes(x = location, y = to.predated))+
-#   geom_point()+
-#   geom_violin()+
-#   facet_wrap(~growth_stage)
-
 
 # 2022 cleaning 
 s22
@@ -79,10 +77,6 @@ clean22 <- s22 %>%
   # dplyr::summarise(total = sum(to.predated)) %>% 
   mutate_at(vars(1:6), as.factor)
 
-# ggplot(clean22, aes(x = location, y = to.predated))+
-#   geom_point()+
-#   geom_violin()+
-#   facet_wrap(~growth_stage)
 
 # 2023 cleaning 
 
@@ -102,11 +96,6 @@ clean23 <- s23 %>%
   na.omit() %>% 
   filter(treatment != 5) %>% 
   mutate_at(vars(1:6),as.factor)
-
-# ggplot(clean23, aes(x = location, y = to.predated))+
-#   geom_point()+
-#   geom_violin()+
-#   facet_wrap(~growth_stage)
 
 # and in the darkness, bind them 
 sent <- rbind(clean21, clean22, clean23)
@@ -175,12 +164,6 @@ sent %>%
 
 ```{r}
 sent
-nr_m1 <- glm(to.predated ~treatment*growth_stage,family = binomial, data = sent)
-summary(nr_m1)$coefficients
-confint(nr_m1)
-
-# Adding random effects
-# This is now a random intercept, fixed slope model
 
 m2 <- glmer(to.predated ~ treatment*growth_stage + (1|year/location/block/plot_id) , family = binomial, data = sent)
 summary(m2)
@@ -193,6 +176,80 @@ plot(allEffects(m2), type = 'response', ylab = 'estimated probability differnces
 
 
 ```
+* There is weak evidence against the null of no interaction between treatment and growth stage Chi squared(6) = 4.13, p = 0.6591, after controlling for the random effect of plot nested in block nested in location nested in year, and will remove the interaction term from the model. 
+
+**Model refinement**
+
+```{r}
+m3 <- glmer(to.predated ~ treatment+growth_stage + (1|year/location/block/plot_id) , family = binomial, data = sent)
+summary(m3)
+
+Anova(m3)
+
+cld(emmeans(m3, ~treatment), Letters = letters)
+cld(emmeans(m3, ~growth_stage), Letters = letters)
+
+```
+
+```{r}
+sent %>% 
+  ggplot()+
+  geom_mosaic(aes(x = product(treatment), fill = to.predated))+
+  scale_fill_manual(values = c("#E7298A","#1B9E77"))+
+  scale_x_productlist(labels=c("No CC", "Early", "Late", "Green"))+
+  labs(title = 'Whole Team Sentinel Prey ~ Treatment',
+       x = 'Treatment',
+       y = 'Total predation binary',
+       caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed between the no-cover and late-terminated treatment\nand the no-cover and planting-green treatment (p < 0.05).\nCompact letter display denotes differences among treatments.')+
+  theme(legend.title = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        axis.text.x = element_text(size=16),
+        axis.text.y = element_text(size = 16),
+        axis.title = element_text(size = 18),
+        plot.title = element_text(size = 18),
+        plot.subtitle = element_text(size = 12), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0, size = 12, color = "grey25"),
+        axis.ticks.length=unit(.25, "cm"))+
+  annotate('text', x = 0.15, y = 0.95, label = 'a', size = 8)+
+  annotate('text', x = .4, y = 0.95, label = 'ab', size = 8)+
+  annotate('text', x = .65, y = 0.95, label = 'bc', size = 8)+
+  annotate('text', x = .875, y = 0.95, label = 'c', size = 8)
+
+
+sent %>% 
+  ggplot()+
+  geom_mosaic(aes(x = product(growth_stage), fill = to.predated))+
+  scale_fill_manual(values = c("#E7298A","#1B9E77"))+
+  labs(title = 'Whole Team Sentinel Prey ~ Growth Stage',
+       x = 'Growth Stage',
+       y = 'Total predation binary',
+       caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed among all growth stages (p < 0.05), where R3 was the highest, followed by V5, and then V3.\nCompact letter display denotes differences among treatments.')+
+  theme(legend.title = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        axis.text.x = element_text(size=16),
+        axis.text.y = element_text(size = 16),
+        axis.title = element_text(size = 18),
+        plot.title = element_text(size = 18),
+        plot.subtitle = element_text(size = 12), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0, size = 12, color = "grey25"),
+        axis.ticks.length=unit(.25, "cm"))+
+  annotate('text', x = 0.175, y = 0.95, label = 'a', size = 8)+
+  annotate('text', x = .5, y = 0.95, label = 'b', size = 8)+
+  annotate('text', x = .85, y = 0.95, label = 'c', size = 8)
+
+```
+
+* Used https://haleyjeppson.github.io/ggmosaic/reference/geom_mosaic.html for the scale_x_productlist function. 
+
+**How to I reorder my x axis? I was not able to find the syntax online. I tried limits, but it seems limits in the scale_x_productlist does not work like it does in scale_x_discrete. 
 
 7) Start to work on a Table 1 that summarizes variables of interest, possibly by groups of interest. At a minimum, summarize the response variable, by a grouping variable if one exists. 
 
@@ -210,8 +267,10 @@ sent %>%
 tally(treatment ~ growth_stage, data = sent)
 
 ```
-8) Provide the names of feedback group members and the date, time, and location of your feedback session interaction.
 
+8) Research question: 
 
+How does sentinel prey rates (1,0) change among treatments and between growth stages and is there an interaction between treatment and growth stage? 
 
-Graded for completion/not but there are points for participation in a feedback session. Note that 412 students get full credit for this.
+10) SOI 
+
