@@ -1,0 +1,124 @@
+---
+title: "STAT X12 HW 8"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: Name(s)
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(janitor)
+library(readxl)
+library(catstats2)
+library(ggResidpanel)
+library(mosaic)
+library(emmeans)
+library(patchwork)
+library(MuMIn)
+library(lmerTest)
+library(gtsummary)
+library(easyalluvial)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules:
+
+Works in groups of 2 to 4 on this submission. **If you have impactful discussions with colleagues outside your group (or any other students if you are working alone), you must add that information in the "Citations" section.**
+
+## Grass Density model
+
+In Uselman et al. (2018), they conducted an experiment to study different factors that might impact restoration of agricultural fields. The study design is quite complex and we will need some additional discussions to fully understand "split-split plot randomized complete block designs" and how to model them correctly (it is coming though). For now, we will be using linear models (`lm`) to work with just the data from the "South" field in May 2016 (**note impacts on SOI of doing this** and **that this changes from the previous HW that worked with the 2017 version of the data set**), so you can read about their study design with that target in mind. 
+
+For this HW, we will focus on their "Grass Density" response and predictors of "Seeding Strategy" and "Irrigation" and their possible interaction. Figure 2 in their paper does a pretty good job of describing the study design and these predictor variables. These results directly relate to their Table 3 and the row for the interaction of Seeding Strategy and Irrigation in particular. Our results will differ for now because we are just focusing on that particular research question in a more complex model and because we were able to keep more levels of seeding strategy in our model by not considering Grass origin that was not defined for some of the seeding strategies. Focus on this particular interaction for your RQ, with interests in comparing levels of the treatment combinations, whether it ends up in an additive or further reduced model or in the interaction model, whichever you find most appropriate, starting with the interaction setting.   
+
+
+They note that they used `log(y + 0.025)` for the Grass density measurements, which started as counts of grass per meter squared (which came from counting grass in quadrats). The original information on the counts is not available and the size and number of quadrats searched changed across observations, so we can't get back to the counts to use Poisson models here. But it is important to note that this was a count variable and would be better modeled that way if we had the original information. There might be some warranted discussion that they observed some 0s in the results...
+
+
+
+* Uselman SM, Davison J, Baughman OW, Sullivan BW, Miller WW, Leger EA (2018)
+Restoring dryland old fields with native shrubs and grasses: Does facilitation and seed source matter? PLoS ONE 13(10): e0205760. https://doi.org/10.1371/journal.pone.0205760
+
+
+Write a statistical report summarizing the results addressing these two predictors and your selected version of the 2016 Grass Density response based on the diagnostics. The researchers used the log(Grass Density + 0.025) version of the response but you are welcome to consider avoiding this transformation - results are provided for the raw responses and their version of the response - you should choose one to focus one for the report and explain why you chose it.
+
+This should lead you to a final model to report and discuss in detail.
+
+Your evidence and any model refinement should be using p-values, not some other model selection criterion. Remember to discuss size of any retained model components in the final model using the effects plots and Tukey's pairwise comparisons.
+
+For your final model, you should include and discuss R-squared, write out the estimated model with indicators clearly defined and effects plots. Use Tukey's follow-up tests appropriately. And of course discuss and assess model assumptions. 
+
+Summary statistics of the response by combinations of the two predictors would be best generated using `favstats` to create your "Table 1". Make sure to address whether this is a balanced design for the two predictors and report a table with counts of observations at each combination or have that information in your "Table 1" so you can discuss this.
+
+**BONUS opportunity: make and discuss an alluvial diagram to support your discussion of the design of the experiment and your predictors of interest, possibly of balanced/not.**
+
+Remember to carefully follow the report writing recommendations. I will be reading carefully for using the word "data" correctly and for writing clarity. Remember that the page limit is up to 4 pages of double-spaced text, but make sure you are focused with your discussions. See the demonstration report from our previous homework for formatting and your answer to the citations question for a start to your references.
+
+```{r fig.width = 10, fig.height = 10}
+Uselman <- read_csv("Uselman_data.csv", na = "-")
+UselmanR <- Uselman %>% dplyr::filter(Site == "South") %>% 
+  mutate(Date = factor(Date)) %>%
+  dplyr::filter(Date == "16-May") %>% 
+  mutate(SeedingStrat = factor(SeedingStrat),
+         Irrigation = factor(Irrigation),
+         GrassOrig = factor(GrassOrig),
+         Blockf = factor(Block),
+         logShrubDens25 = log(ShrubDens2016 + 0.025),
+         logShrubDens1 = log(ShrubDens2016 + 1))
+
+dim(UselmanR)
+UselmanR <- UselmanR %>% drop_na(ShrubOrig) 
+dim(UselmanR)
+
+UselmanR <- UselmanR %>%  mutate(SeedingStrat = factor(SeedingStrat),
+         Irrigation = factor(Irrigation),
+         GrassOrig = factor(GrassOrig),
+         logGrassDens2016 = log(GrassDens2016 + 0.25))
+
+
+ggintplot(response = "GrassDens2016", groupvars = c("SeedingStrat", "Irrigation"), data = UselmanR)
+?ggintplot
+ggintplot(response = "logGrassDens2016", groupvars = c("SeedingStrat", "Irrigation"), data = UselmanR)
+
+m0 <- lm(GrassDens2016 ~ SeedingStrat*Irrigation, data = UselmanR)
+plot(allEffects(m0, residuals = T), grid = T)
+summary(m0)
+resid_panel(m0, "R")
+
+Anova(m0)
+
+m1 <- lm(logGrassDens2016 ~ SeedingStrat*Irrigation, data = UselmanR)
+plot(allEffects(m1, residuals = T), grid = T)
+summary(m1)
+m1 %>% tbl_regression(intercept = T)
+resid_panel(m1, "R")
+
+Anova(m1)
+
+m1_em <- emmeans(m1, pairwise ~ SeedingStrat*Irrigation, adjust = "tukey")
+m1_em
+pwpm(m1_em)
+multcomp::cld(m1_em, alpha = 0.05, Letters = LETTERS)
+```
+
+
+Bonus stuff 
+```{r}
+tally(SeedingStrat~Irrigation, data = UselmanR)
+?tally
+alluvial_wide(data = UselmanR %>% dplyr::select(SeedingStrat,Irrigation))
+```
+This is a balanced design. Using the tally output, we can see that observations are balanced and there are enough data to conduct and interaction model. Additionally, the alluvial plot visually depicts that the data frame is balanced in observations between the two categorical predictors, seeding strategy and irrigation.  
+
