@@ -1,13 +1,13 @@
 ---
-title: "512 Project Part I"
+title: "512 Project Part II"
 output:
   word_document:
     fig_height: 5
     fig_width: 8
-date: "Due Sept 27"
+date: "10/31/2024"
 author: "Jared Adam"
 ---
-**The number of conflicts with dplyr from all of the packages we must download is becoming annoying and breaking code.** 
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE,
@@ -21,6 +21,7 @@ library(tidyverse)
 library(car)
 library(effects)
 library(mosaic)
+library(ggmosaic)
 library(ggResidpanel)
 library(catstats2)
 library(effects)
@@ -29,7 +30,7 @@ library(modelsummary)
 library(ggpp)
 library(multcomp)
 library(emmeans)
-theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+# theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 ```
 
 # Part I (512 only, project proposal, 25 pts): 
@@ -91,7 +92,6 @@ clean23 <- s23 %>%
   dplyr::select(location, year, growth_stage, plotid, block, treatmetn, to.predated) %>% 
   dplyr::rename(plot_id = plotid, 
          treatment = treatmetn) %>%
-  distinct() %>% 
   group_by(location, year, growth_stage, plot_id, block, treatment) %>% 
   na.omit() %>% 
   filter(treatment != 5) %>% 
@@ -145,8 +145,6 @@ image(tdf)
 5) Provide at least one display of the data, focusing on the response of interest versus a predictor. If you have multiple predictors, try to plot the response versus those too.
 
 ```{r}
-
-library(ggmosaic)
 sent %>% 
   ggplot() +
   geom_mosaic(aes(x = product(treatment), fill = to.predated))+
@@ -176,7 +174,7 @@ plot(allEffects(m2), type = 'response', ylab = 'estimated probability differnces
 
 
 ```
-* There is weak evidence against the null of no interaction between treatment and growth stage Chi squared(6) = 4.13, p = 0.6591, after controlling for the random effect of plot nested in block nested in location nested in year, and will remove the interaction term from the model. 
+* There is weak evidence against the null of no interaction between treatment and growth stage Chi squared(6) = 8.25, p = 0.22, after controlling for the random effect of plot nested in block nested in location nested in year, and will remove the interaction term from the model. 
 
 **Model refinement**
 
@@ -185,6 +183,10 @@ m3 <- glmer(to.predated ~ treatment+growth_stage + (1|year/location/block/plot_i
 summary(m3)
 
 Anova(m3)
+
+plot(allEffects(m3), type = 'link',ylab = 'Estimated log differnces in total predation', grid = T)
+plot(allEffects(m3), type = 'response', ylab = 'Estimated probability differnces in total predation', grid = T)
+
 
 cld(emmeans(m3, ~treatment), Letters = letters)
 cld(emmeans(m3, ~growth_stage), Letters = letters)
@@ -201,6 +203,7 @@ sent %>%
        x = 'Treatment',
        y = 'Total predation binary',
        caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed between the no-cover and late-terminated treatment\nand the no-cover and planting-green treatment (p < 0.05).\nCompact letter display denotes differences among treatments.')+
+  guides(fill = guide_legend(title = 'Predation:\n0 = no predation\n1 = predation'))+
   theme(legend.title = element_text(size = 14),
         legend.text = element_text(size = 14),
         axis.text.x = element_text(size=16),
@@ -215,8 +218,8 @@ sent %>%
         plot.caption = element_text(hjust = 0, size = 12, color = "grey25"),
         axis.ticks.length=unit(.25, "cm"))+
   annotate('text', x = 0.15, y = 0.95, label = 'a', size = 8)+
-  annotate('text', x = .4, y = 0.95, label = 'ab', size = 8)+
-  annotate('text', x = .65, y = 0.95, label = 'bc', size = 8)+
+  annotate('text', x = .4, y = 0.95, label = 'a', size = 8)+
+  annotate('text', x = .65, y = 0.95, label = 'b', size = 8)+
   annotate('text', x = .875, y = 0.95, label = 'c', size = 8)
 
 
@@ -228,6 +231,7 @@ sent %>%
        x = 'Growth Stage',
        y = 'Total predation binary',
        caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed among all growth stages (p < 0.05), where R3 was the highest, followed by V5, and then V3.\nCompact letter display denotes differences among treatments.')+
+  guides(fill = guide_legend(title = 'Predation:\n0 = no predation\n1 = predation'))+
   theme(legend.title = element_text(size = 14),
         legend.text = element_text(size = 14),
         axis.text.x = element_text(size=16),
@@ -246,10 +250,12 @@ sent %>%
   annotate('text', x = .85, y = 0.95, label = 'c', size = 8)
 
 ```
+* I plan to make additional plots with the proportion of predation. 
+
 
 * Used https://haleyjeppson.github.io/ggmosaic/reference/geom_mosaic.html for the scale_x_productlist function. 
 
-**How to I reorder my x axis? I was not able to find the syntax online. I tried limits, but it seems limits in the scale_x_productlist does not work like it does in scale_x_discrete. 
+**How to I reorder my x axis? I was not able to find the syntax online. I tried limits, but it seems limits in the scale_x_productlist does not work like it does in scale_x_discrete. I would like it to do V3, V5, R3. I tried functions from the forcats package, but it seems ggmosaic is overriding those or is not compatible with them in the same line.**
 
 7) Start to work on a Table 1 that summarizes variables of interest, possibly by groups of interest. At a minimum, summarize the response variable, by a grouping variable if one exists. 
 
@@ -270,7 +276,13 @@ tally(treatment ~ growth_stage, data = sent)
 
 8) Research question: 
 
-How does sentinel prey rates (1,0) change among treatments and between growth stages and is there an interaction between treatment and growth stage? 
+How do sentinel prey rates (1,0) change among treatments and growth stages and is there an interaction between treatment and growth stage? 
 
-10) SOI 
+9) SOI 
+
+G: The locations chosen for this experiment were not randomly selected (Universities volunteered to join the project), and thus the results would not generalize beyond the locations present. Additionally, the results only apply to years 2021-2023 in a corn monoculture following a cereal-rye cover crop. Data were collected at three, non-random time points throughout the season, and we cannot generalize beyond those time points. 
+
+C: The treatments and the trap location were randomly assigned in the field and thus, we can make causal inference on the predation levels within different treatments and parts of the field. 
+
+
 
