@@ -105,12 +105,26 @@ summary(m1)
 m1 %>% tbl_regression(intercept = T)
 resid_panel(m1, "R")
 
+?emmeans
 Anova(m1)
 
 m1_em <- emmeans(m1, pairwise ~ SeedingStrat*Irrigation, adjust = "tukey")
 m1_em
 pwpm(m1_em)
 multcomp::cld(m1_em, alpha = 0.05, Letters = LETTERS)
+```
+
+```{r}
+library(modelsummary)
+datasummary_balance(GrassDens2016 ~ SeedingStrat, data = UselmanR, output = 'markdown',
+                    title = 'Grass ~ Seeding Strat')
+
+datasummary_balance(GrassDens2016 ~ Irrigation, data = UselmanR, output = 'markdown',
+                    title = 'Grass ~ Irrigation')
+
+datasummary_balance(SeedingStrat + GrassDens2016 ~ Irrigation, data = UselmanR, output = 'markdown',
+                    title = 'Grass ~ Irrigation & Seeding:IDK if this helps at all')
+?ggintplot
 ```
 
 
