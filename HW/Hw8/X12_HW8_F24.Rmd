@@ -115,17 +115,13 @@ multcomp::cld(m1_em, alpha = 0.05, Letters = LETTERS)
 ```
 
 ```{r}
-library(modelsummary)
-datasummary_balance(GrassDens2016 ~ SeedingStrat, data = UselmanR, output = 'markdown',
-                    title = 'Grass ~ Seeding Strat')
 
-datasummary_balance(GrassDens2016 ~ Irrigation, data = UselmanR, output = 'markdown',
-                    title = 'Grass ~ Irrigation')
+?favstats
+favstats(GrassDens2016 ~ SeedingStrat + Irrigation, data = Uselman)
 
-datasummary_balance(SeedingStrat + GrassDens2016 ~ Irrigation, data = UselmanR, output = 'markdown',
-                    title = 'Grass ~ Irrigation & Seeding:IDK if this helps at all')
-?ggintplot
 ```
+
+
 
 
 Bonus stuff 
