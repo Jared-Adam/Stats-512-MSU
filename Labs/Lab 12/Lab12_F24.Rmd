@@ -340,4 +340,4 @@ At the group level, the estimated mean strength of our group is higher than the 
 
 The theoretical model being fit here is: 
 
-$\mu\{PlantSurvival|Fertilizer\} = \beta_0 + \beta_1I_{Fertilizer = D} + \beta_I_{Fertilizer = E} + \beta_3I_{Fertilizer = F} + \Row + \Subject + \Error$
+$\mu\{PlantSurvival|Fertilizer\} = \beta_0 + \beta_1I_{Fertilizer = D}_i + \beta_I_{Fertilizer = E}_i + \beta_3I_{Fertilizer = F}_i + \Row_i + \Subject_i + \Error_i$
