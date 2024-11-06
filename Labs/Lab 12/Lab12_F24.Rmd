@@ -297,8 +297,8 @@ g3 %>%
 
 
 ```{r}
-nm1 <- lmer(GripStrength ~ forearm_bins + GripTesterID + Hand +  (1|SubjectID/GroupName), data = combinedR)
-Anova(nm1)
+nm1 <- lmer(GripStrength ~ forearm_bins + GripTesterID + Hand +  (1|GroupName/SubjectID), data = combinedR)
+Anova(nm1,test.statistic = "F")
 summary(nm1)
 plot(allEffects(nm1))
 ```
@@ -324,18 +324,20 @@ The values are the same for grip tester with F(4,16.009) = 2.9977, p = 0.054.
 * Note: If you were not in a group, I added a display of the forearm lengths (our only proxy for height which was how the groups were formed) to help you think about the characteristics of the groups.
 
 ```{r}
-nm2 <- lmer(GripStrength ~ forearm_bins + Hand +  (1|SubjectID/GroupName), data = combinedR)
+nm2 <- lmer(GripStrength ~ forearm_bins + Hand +  (1|GroupName/SubjectID), data = combinedR)
 dotplot(ranef(nm2, postVar = T))
 
 
 enhanced_stripchart(ForearmLength ~ GroupName, data = Demographics)
 ```
 
-All of our group estimated strengths are higher than the average, after accounting for subject and group. 
+At the group level, the estimated mean strength of our group is higher than the others, and the average. At the subject:group level, our values are spread throughout, with two of our group members falling below average. We suspect this is because of the PATaller score influencing the estimates of our other group members. 
 
 
 ## BONUS: Scenario identification and model writing to prepare for the final exam:
 
 **Suppose that a researcher is studying plant survival over a winter (`survived` coded as `alive` and `dead`), where the plants are planted in different rows (10 rows in a field, 8 plants per row). There are four different types of `fertilizer` that are randomly assigned to the plants (`control` of none and three different brands that are coded as `D`, `E`, and `F`), with two plants per row getting each level of the `fertilizer`. Suppose that the researchers chose not to include the row in the model. Write out the theoretical model that should be fit here, defining anything that needs definition.**
 
+The theoretical model being fit here is: 
 
+$\mu\{PlantSurvival|Fertilizer\} = \beta_0 + \beta_1I_{Fertilizer = D} + \beta_I_{Fertilizer = E} + \beta_3I_{Fertilizer = F} + \Row + \Subject + \Error$
