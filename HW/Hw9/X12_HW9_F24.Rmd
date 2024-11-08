@@ -1,0 +1,130 @@
+---
+title: "STAT X12 HW 9"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+author: Name
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(janitor)
+library(readxl)
+library(catstats2)
+library(ggResidpanel)
+library(mosaic)
+library(emmeans)
+library(patchwork)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(easyalluvial)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules:
+
+This is an individual assignment.  **If you have impactful discussions with colleagues, you must add that information in the last question along with any outside resources used.**
+
+
+## Skin Tattoos Alter Sweat Rate and Na+ Concentration
+
+* Read Luetkemeier, Hanisko, and Aho (2017) available at https://journals.lww.com/acsm-msse/fulltext/2017/07000/skin_tattoos_alter_sweat_rate_and_na_.19.aspx
+
+
+* Luetkemeier, M., Hanisko, J., and K. Aho (2017) Skin Tattoos Alter Sweat Rate and Na+ Concentration. Medicine & Science in Sports & Exercise 49(7):p 1432-1436. DOI: 10.1249/MSS.0000000000001244
+
+* The data on sweat rates and sodium concentration were not posted, but I digitized the plotted data to create the provided data set, available in the `catstats2` package in `combinedtattoo` data set. So do not expect to match their posted results exactly but to be very close if we match analysis techniques.
+
+**1) Make two different spaghetti plots, one for the `SweatRate` response and another for the `Na_conc`, relative to the two measurement locations (in `Tat_not`), coloring the lines based on the subject identifier. Patch the two figures together using the `patchwork` package to report one plot with the two figures combined. No discussion.**
+
+
+```{r}
+data(combinedtattoo)
+tats1 <- combinedtattoo
+
+tats1 <- tats1 %>% mutate(Tat_not = factor(Tat_not), 
+                          Subject = factor(Subject))
+
+p1 <- tats1 %>% 
+  ggplot(mapping = aes(x = Tat_not, y = SweatRate, group = Subject))+
+  geom_point(aes(color = Subject))+
+  geom_line(alpha = 0.3)
+
+p2 <- tats1 %>% 
+  ggplot(mapping = aes(x = Tat_not, y = Na_conc, group = Subject))+
+  geom_point(aes(color = Subject))+
+  geom_line(alpha = 0.3)
+
+p1 + p2
+
+```
+
+**2) Based on your plots, what proportion of subjects had their measurement go down for sweat rate for tattooed sites vs non-tattooed sites? What proportion went up for sodium concentration?**
+
+- For sweat, it would appear that sweat rate decreased from no tattoo to tattoo for all of the subjects (100%). For Na concentration, it appears 9/10 subjects had an increase from no tattoo to tattoo. 
+
+
+**3) Qualitatively compare your spaghetti plots to Figures 1 and 2 in the original paper. Which plot do you prefer and why? Would your preference change if they had 100 subjects instead of 10?**
+
+- For such a small data set, I prefer the spaghetti plots. Their bar charts have a lot going on, and while we can interpret them with ease, their message is muddled but the number of bars necessary to show the change they want. That said, as sample sizes increase, the spaghetti plots become harder and harder in the interpret. The spaghetti still would be better than a bar chart with 200 bars showing the differences between each p subject. 
+
+**4) Fit a linear mixed model using `lmer` with a subject random effect and tattoo/not for the fixed effect for the sweat rate response. Write out the theoretical (not estimated!) model that you are fitting. Carefully define and use both _i_ and _j_ subscripts and what they correspond to. Also define any variables/components in the model.**
+
+i = subject \beta_{0} + \beta_{1}_I_{LBP = low pain}
+
+* $SweatRate_{ij} = \beta_0 + \beta_1I_{Tat = Tattoo,ij} + Subject_i + \epsilon_{ij}$
+
+    - where beta 1 (tat_not) = 1 for a tattoo and 0 otherwise, and  $i = 1,2,...,I$ for the subject, and $j = 1,...,J$ for Jth observation on the Ith subject.
+
+```{r}
+m1 <- lmer(SweatRate ~ Tat_not + (1|Subject), 
+           data = tats1)
+
+summary(m1)
+
+```
+
+**5) The authors report that "The mean difference in sweat rate between tattooed skin
+and nontattooed skin was $-0.17 \pm 0.11 mg \cdot cm^{-2} \cdot min^{-1}$." Compare the -0.17 to the equivalent estimate for the difference in the means from your mixed model.**
+
+- For my model, I recorded the same estimated mean difference between non-tattooed and tattooed. 
+
+
+**6) Report an evidence sentence for the tattoo/not difference for the mixed model result.**
+
+- There is strong evidence against the null of no difference in sweat rate between tattooed and non-tattooed skin t(9) = -4.76, p-valu = 0.001. 
+
+
+```{r}
+
+```
+**7) Find the two R-squareds from this model. Just code and output, no discussion.**
+
+
+
+```{r}
+r.squaredGLMM(m1)
+```
+
+**8) Calculate the ICC from the sweat rate model. Write out what you are calculating and provide the numerical result. No discussion.**
+
+Random term varince / random term variance + residual variance 
+
+```{r}
+(0.034 / (0.034 + 0.006))
+
+```
+
+**9) Report on any substantive discussions or outside resources uses to complete the assignment. Be clear on how you used them and how that impacted your answers.**
