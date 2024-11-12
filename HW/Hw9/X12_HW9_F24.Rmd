@@ -78,7 +78,7 @@ p1 + p2
 
 **3) Qualitatively compare your spaghetti plots to Figures 1 and 2 in the original paper. Which plot do you prefer and why? Would your preference change if they had 100 subjects instead of 10?**
 
-- For such a small data set, I prefer the spaghetti plots. Their bar charts have a lot going on, and while we can interpret them with ease, their message is muddled but the number of bars necessary to show the change they want. That said, as sample sizes increase, the spaghetti plots become harder and harder in the interpret. The spaghetti still would be better than a bar chart with 200 bars showing the differences between each p subject. 
+- For such a small data set, I prefer the spaghetti plots. Their bar charts have a lot going on, and while we can interpret them with ease, their message is muddled by the number of bars necessary to show the change they want. That said, as sample sizes increase, the spaghetti plots become harder and harder to interpret. The spaghetti still would be better than a bar chart with 200 bars showing the differences between each subject. 
 
 **4) Fit a linear mixed model using `lmer` with a subject random effect and tattoo/not for the fixed effect for the sweat rate response. Write out the theoretical (not estimated!) model that you are fitting. Carefully define and use both _i_ and _j_ subscripts and what they correspond to. Also define any variables/components in the model.**
 
@@ -104,15 +104,9 @@ and nontattooed skin was $-0.17 \pm 0.11 mg \cdot cm^{-2} \cdot min^{-1}$." Comp
 
 **6) Report an evidence sentence for the tattoo/not difference for the mixed model result.**
 
-- There is strong evidence against the null of no difference in sweat rate between tattooed and non-tattooed skin t(9) = -4.76, p-valu = 0.001. 
+- There is strong evidence against the null of no difference in sweat rate between tattooed and non-tattooed skin t(9) = -4.76, p-value = 0.001. 
 
-
-```{r}
-
-```
 **7) Find the two R-squareds from this model. Just code and output, no discussion.**
-
-
 
 ```{r}
 r.squaredGLMM(m1)
@@ -120,7 +114,7 @@ r.squaredGLMM(m1)
 
 **8) Calculate the ICC from the sweat rate model. Write out what you are calculating and provide the numerical result. No discussion.**
 
-Random term varince / random term variance + residual variance 
+Random term variance / random term variance + residual variance 
 
 ```{r}
 (0.034 / (0.034 + 0.006))
@@ -128,3 +122,4 @@ Random term varince / random term variance + residual variance
 ```
 
 **9) Report on any substantive discussions or outside resources uses to complete the assignment. Be clear on how you used them and how that impacted your answers.**
+NONE
