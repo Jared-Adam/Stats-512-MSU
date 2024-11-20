@@ -1,0 +1,223 @@
+---
+title: "Lab 13"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+library(ggResidpanel)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+library(lme4)
+library(lmerTest)
+library(gtsummary)
+library(qqplotr)
+library(DiagrammeR)
+library(DiagrammeRsvg)
+webshot::install_phantomjs(force = T)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+```{r}
+GripStrengthMeasurements <- read_excel("GripStrengthMeasurementsF24.xlsx")
+GS <- GripStrengthMeasurements %>% drop_na(GripStrength)
+GS <- GS %>% drop_na(Arm)
+GS <- GS %>% mutate(Arm = forcats::fct_collapse(Arm,
+                                                Up = c("Up", "up"),
+                                                Down = c("Down", "down"),
+                                                "90" = c("90", "90 degree")),
+                    SubjectID = forcats::fct_collapse(SubjectID,
+                                          MDEarl = c("MDEarl","MDEar")),
+                    Arm = factor(Arm),
+                    Hand = factor(Hand),
+                    OrderF = factor(Order)
+)
+
+Demographics <- read_excel("DemographicsF24.xlsx")
+Demographics <- Demographics %>% mutate(SubjectID = forcats::fct_recode(SubjectID,
+                                                              LADeathGrips = "LADeath"))
+
+Demographics <- Demographics %>% mutate(Weights = factor(Weights), 
+                                        Weights = forcats::fct_collapse(Weights,
+                                                              no = c("no", "No"),
+                                                              yes = c("yes", "Yes")))
+
+combined <- left_join(x = GS, y = Demographics, by = "SubjectID")
+
+combinedR <- combined %>% drop_na()
+
+combinedR <- combinedR %>% mutate(forearm_bins   = cut_number(ForearmLength, n = 3),
+                                  epworth_bins = cut_number(Epworth, n = 3),
+                                  balance_bins = cut_number(BalanceTime, n = 3))
+```
+
+
+
+# Part I: Wrapping up Grip Strength
+
+**1) Based on the following scatterplot, discuss the relationship between balance time and grip strength. **
+
+
+```{r}
+combinedR %>% mutate(SubjectNumber = as.numeric(SubjectID)) %>% 
+  ggplot(aes(x = BalanceTime, y = GripStrength)) +
+  geom_point(aes(color = SubjectNumber), alpha = 0.4) +
+  geom_smooth(method = "lm") + 
+  geom_smooth(se = F, lty = 2, col = "red") +
+  scale_color_viridis_c(end = 0.8) + 
+  labs(x = "Balance Time (seconds)", y = "Grip Strength (lbs)")
+```
+- There is a slight positive relationship between grip strength and balance time. There is potential missed curvature which could lead to a non-positive relationship.
+
+
+The following model considers `ForarmLength` (quantitative version, not binned) and `BalanceTime` as well as the hand used. 
+
+```{r}
+lmerB <- lmer(GripStrength ~ BalanceTime + ForearmLength +  Hand  + (1|GroupName/SubjectID), data = combinedR)
+plot(allEffects(lmerB, residuals = T), grid = T)
+summary(lmerB)
+confint(lmerB)
+```
+
+**2) Generate a size interpretation for the Balance time predictor in the model (remember that grip strength was measured in pounds and balance time in seconds). After completing the size interpretation, reflect on whether any aspect of that size interpretation is a surprising result to you. For example, did you expect a more clear relationship or are you surprised about the direction or is that the direction you would have expected?**
+
+- t(19.3683) = 1.32, p = 0.2022
+
+-For two otherwise similar subjects differing in their balance time we estimated the true mean in grip strength will increase by 0.876 pounds with a subject with... after controlling for subject ID and group name , t(19.3683) = 1.32, p = 0.2022, 95% CI (-0.47, 2.13). With this finding, there is weak evidence against the null that balance time effects grip strength and we would remove balance time from the model. 
+
+
+
+**3) Discuss the linearity assumption for this model with a particular focus on the balance time predictor, discussing all pertinent displays.**
+
+- Based on the residual vs fitted plot, there is weak evidence against the linearity assumption beacuase there is no clear missed curvature. 
+
+
+```{r fig.width = 8, fig.height = 8}
+resid_panel(lmerB, c("resid", "qq", "yvp", "hist"))
+```
+
+## Part II: Shrub density (eventually) done "correctly"
+
+* Now we will revisit the shrub density study from HWs 6 and 8 to now account for the measurement structure from Uselman et al. (2018).
+
+* Uselman SM, Davison J, Baughman OW, Sullivan BW, Miller WW, Leger EA (2018) Restoring dryland old fields with native shrubs and grasses: Does facilitation and seed source matter? PLoS ONE 13(10): e0205760. https://doi.org/10.1371/journal.pone.0205760
+
+
+* Note that in this version, we are not deleting the observations that were in Seeding Strategy V, so n = 84 compared to the 72 you used in the homework.
+
+```{r}
+Uselman <- read_csv("Uselman_data.csv", na = "-")
+UselmanR <- Uselman %>% dplyr::filter(Site == "South") %>%
+  mutate(Date = factor(Date)) %>%
+  dplyr::filter(Date == "16-May") %>%
+  mutate(SeedingStrat = factor(SeedingStrat),
+         Irrigation = factor(Irrigation),
+         GrassOrig = factor(GrassOrig),
+         Blockf = factor(Block),
+         logShrubDens25 = log(ShrubDens2016 + 0.025),
+         Block = factor(Block),
+         SubBlock = factor(SubBlock),
+         Plot = factor(Plot))
+
+UselmanR <- UselmanR %>%  mutate(SeedingStrat = factor(SeedingStrat),
+         Irrigation = factor(Irrigation),
+         GrassOrig = factor(GrassOrig),
+         SeedingStrat.ShrubOrig = factor(str_c(SeedingStrat, ShrubOrig)),
+         SeedingStrat.ShrubOrig = forcats::fct_na_value_to_level(SeedingStrat.ShrubOrig, "V")
+         )
+
+```
+
+**4) The following models attempt to fit models to account for the nested measurements in the study design with block, "subblocks" in blocks (shaded areas in their Figure 2), and plots in subblocks in blocks (the numbers 1 to 7 that are then split into A and B parts at the dashed line in their Figure 2 - more or less the rows within the subblocks). I fit the models two ways, one using the forced nesting notation and the other trying to have `lmer` find the nesting structure using the additive notation for the random effects. What changed between the two models in terms of the counts of levels in the random effects?**
+
+
+```{r}
+lmerU4 <- lmer(logShrubDens25 ~ 1 +  (1|Block/SubBlock/Plot), data = UselmanR)
+
+lmerU4A <- lmer(logShrubDens25 ~ 1 +  (1|Block) + (1|SubBlock) + (1|Plot), data = UselmanR)
+
+summary(lmerU4)
+summary(lmerU4A)
+```
+- In model one, the hierarchy is structured to account for the nested nature of the plot within sub block within block. The second model is additive in the random term (crossed), but no longer accounts for the hierarchy, and thus there is no nesting of the terms. As such, the model accounts for the random error of each term, but not the hierarchy nested structure. The number of observations is the same but the model estimates random error variance differently. This model does not account for the lack of independence in the random structure. 
+
+**5) It can be good to explore the random effect levels and combinations you are using with an alluvial diagram. Modify the provided code to make one of the `Block`, `SubBlock`, and `Plot`. No discussion.**
+
+```{r}
+UselmanR %>% dplyr::select(Block, SubBlock, Plot) %>% alluvial_wide(fill_by = "first_variable")
+
+
+```
+
+
+**6) The issue in the "additive" model notation is that `Plot` reused the same coding of 1 to 7 for different locations within different blocks and plots. What is needed is a unique code for each plot, call it `PlotID`, not a code that is generic and recycled across those higher level units. You can use the `str_c` function to fuse together the block, subblock, and plot information and create a new variable that uniquely identifies each plot. Replace `Plot` in the previous alluvial diagram and color the alluvia based on the new variable. How can you explain the "Number of flows" information in the alluvial diagram based on the study design?**
+
+
+```{r fig.height = 12}
+UselmanR <- UselmanR %>% mutate(PlotID = str_c(Block, SubBlock, Plot))
+
+UselmanR %>% dplyr::select(Block, SubBlock, PlotID) %>% alluvial_wide(fill_by = "last_variable")
+```
+There are 42 flows but we are missing the observation level of A and B. 42 x 2 observations per plot/ Subblock plot = 84 total observations. 
+
+
+
+**7) Replace the `Plot` in the "additive" code version of the lmer model above with the uniquely coded version of the variable you created, `PlotID`. Also incorporate the fixed effects of the `SeedingStrat.ShrubOrig` variable which contains all the combinations of those two variables (including a new level from HW 8 that is for Seeding Strategy V and no shrub origin because there were no shrubs), `Irrigation`, and their interaction. How many levels does the new version of the "plot" that you created have in the model?**
+
+
+```{r}
+m1 <- lmer(logShrubDens25 ~ SeedingStrat.ShrubOrig*Irrigation +  (1|Block) + (1|SubBlock) + (1|PlotID), data = UselmanR)
+plot(allEffects(m1), grid = T)
+summary(m1)
+```
+There are 42 levels of the new plot variable because we are not accounting for the observation of A and B.
+
+**8) Generate an `Anova` F-test from this model and report an evidence sentence for the interaction test as it relates to building a model.**
+
+
+```{r}
+Anova(m1, test.statistic = "F")
+
+```
+- There is little to no evidence against the null hypothesis of no interaction between SeedingStrat.ShrubOrig:Irrigation on logShrubDens25 F(8,47,826) = 0.92, p = 0.51, and therefore we would remove it from the model. 
+
+**9) Re-fit the four-level mixed model with just the `SeedingStrat.ShrubOrig` fixed effect and generate the F-test for that predictor. Then use `lm` with just `SeedingStrat.ShrubOrig` and generate the F-test. Then compare the denominator DF for the test statistics and p-values produced.**
+
+```{r}
+m2 <- lmer(logShrubDens25 ~ SeedingStrat.ShrubOrig +  (1|Block) + (1|SubBlock) + (1|PlotID), data = UselmanR)
+plot(allEffects(m1), grid = T)
+summary(m2)
+
+Anova(m2, test.statistic = "F")
+
+m3 <- lm(logShrubDens25 ~ SeedingStrat.ShrubOrig, data = UselmanR)
+Anova(m3)
+```
+- The new model has a denominator df of 54.5 and a p value of p < 0.0001. F(8, 54.5), p < 0.0001. The lm model has a denominator of 75, F(8,75) = 97.78, p < 0.0001. By removing the random effects, so all of the variance from the from the random terms are now being put into the residual df of the simple linear regression. Both models produce a a p-value < 0.0001. 
+
+
+## BONUS: Scenario identification and model writing to prepare for the final exam:
+
+**Suppose that a researcher is studying plant growth (measured in pounds per acre and stored in `Yield`), where the plants are planted in different rows (10 rows in a field, 8 plants per row). There are four different types of `fertilizer` that are randomly assigned to the plants (`control` of none and three different brands that are coded as `D`, `E`, and `F`), with two plants per row getting each level of the `fertilizer`. Suppose that the researchers chose to include the row in the model as a random effect. Write out the theoretical model that should be fit here, defining anything that needs definition.**
+
+Rennie added this
+
+
+

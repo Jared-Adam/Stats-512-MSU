@@ -1,0 +1,236 @@
+---
+title: "Lab 14"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+library(ggResidpanel)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(plotly)
+library(lme4)
+library(lmerTest)
+library(gtsummary)
+library(qqplotr)
+library(ggmosaic)
+webshot::install_phantomjs(force = T)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+```{r}
+GripStrengthMeasurements <- read_excel("GripStrengthMeasurementsF24.xlsx")
+GS <- GripStrengthMeasurements %>% drop_na(GripStrength)
+GS <- GS %>% drop_na(Arm)
+GS <- GS %>% mutate(Arm = forcats::fct_collapse(Arm,
+                                                Up = c("Up", "up"),
+                                                Down = c("Down", "down"),
+                                                "90" = c("90", "90 degree")),
+                    SubjectID = forcats::fct_collapse(SubjectID,
+                                          MDEarl = c("MDEarl","MDEar")),
+                    Arm = factor(Arm),
+                    Hand = factor(Hand),
+                    OrderF = factor(Order)
+)
+
+Demographics <- read_excel("DemographicsF24.xlsx")
+Demographics <- Demographics %>% mutate(SubjectID = forcats::fct_recode(SubjectID,
+                                                              LADeathGrips = "LADeath"))
+
+Demographics <- Demographics %>% mutate(Weights = factor(Weights), 
+                                        Weights = forcats::fct_collapse(Weights,
+                                                              no = c("no", "No"),
+                                                              yes = c("yes", "Yes")))
+
+combined <- left_join(x = GS, y = Demographics, by = "SubjectID")
+
+combinedR <- combined %>% drop_na()
+
+combinedR <- combinedR %>% mutate(forearm_bins   = cut_number(ForearmLength, n = 3),
+                                  epworth_bins = cut_number(Epworth, n = 3),
+                                  balance_bins = cut_number(BalanceTime, n = 3),
+                                  Hand.Arm = factor(str_c(Hand, Arm)))
+
+realspaghetti <- combinedR %>% ggplot(mapping = aes(x = Hand.Arm, y = GripStrength, group = SubjectID)) +
+  geom_line(alpha = 0.3) +
+  geom_point(aes(color = Order), alpha = 0.7) +
+  scale_color_viridis_c(end = 0.8)
+
+realspaghetti
+realspaghetti %>% ggplotly()
+
+```
+
+# Rules
+
+In self-selected groups of 2 to 4, complete the following.
+
+# Part I: Wrapping up Grip Strength, Version 2
+
+```{r}
+lmerB <- lmer(GripStrength ~ BalanceTime + ForearmLength +  Hand  + (1|GroupName/SubjectID), data = combinedR)
+summary(lmerB)
+
+```
+
+**1) The ICC for two observations on the same subject after accounting for those predictors follows. This suggests extremely high correlation on repeated measures from the same subject, which corresponds to our original plot of grip strength measurements, reproduced above. Make a spaghetti plot of the `SimGrip` response versus `Hand.Grip` with lines by subject. The `SimGrip` is a simulated version of the responses that was generated without any of the random effects structure (think of that response coming from a situation where the random effects have variances of 0 but otherwise the results match the fixed effects from the real data). No discussion - just make the plot.**
+
+```{r}
+(162.85 + 121.33)/ (162.85 + 121.33 + 23.33)
+
+set.seed(1234)
+combinedR$SimGrip <- simulate(lm(GripStrength ~ BalanceTime + ForearmLength +  Hand, data = combinedR))$sim_1
+
+
+combinedR %>% ggplot(mapping = aes(x = Hand.Arm, y = SimGrip, group = SubjectID)) +
+  geom_line(alpha = 0.3) +
+  geom_point(aes(color = Order), alpha = 0.7) +
+  scale_color_viridis_c(end = 0.8)
+```
+
+
+**2) The following code re-fits the mixed model to the simulated responses. Recalculate the ICC for two observations on the same subject using the estimated model and compare it to the "real" results. How is the change in the ICC reflected in your spaghetti plot of the simulated responses?**
+
+
+```{r}
+lmerS <- lmer(SimGrip ~ BalanceTime + ForearmLength +  Hand  + (1|GroupName/SubjectID), data = combinedR)
+summary(lmerS)
+(22.081 + 3.234) / (22.081 + 3.234 + 226.596)
+
+```
+- There is very little ICC in the new df which can be seen because there is little correlation within the subject among the grip type. This is clear in the spaghetti plot as there is little consistency/ pattern among subjects. 
+
+## Part II: Odds, Odds ratios, and logistic regression
+
+# Modeling Snow Density
+
+We will be using the data set from Wetlaufer, Hendrikx, and Marshall (2016) that explored the relationship between snow density ($kg/m^3$) or snow depth (`snow`, mm) with a suite of predictor variables. To be able to measure characteristics of snow, they needed to find snow in the locations they were sampling, so the focus in this lab will be on the snow presence or absence at each location (`SnowPresence`). We will be interested in using `elev` (Elevation, m), `Land` (forest cover with 0 = unforested and 10 = forested), `rad` (Potential Solar radiation, $Wh/m^2$),  `curvature` (see https://blogs.esri.com/esri/arcgis/2010/10/27/understanding-curvature-rasters/ for a description), `aspect` (orientation of slope in degrees (0 to 360)), and `angle` (angle of slope in degrees with 0 being flat) as fixed effect predictors. Also pay attention to the `strata` variable (read its definition in the paper) and the role that played in the data collection and so should be considered in the analysis.
+
+* Wetlaufer, K., Hendrikx, J., and L. Marshall (2016) Spatial Heterogeneity of Snow Density and Its Influence on Snow Water Equivalence Estimates in a Large Mountainous Basin. _Hydrology_, 3(1):3, doi:10.3390/hydrology3010003. Available at http://www.mdpi.com/2306-5338/3/1/3/htm  and on D2L
+
+
+Run the following code to get started with the data set. 
+
+```{r fig.width=8, fig.height=4}
+data(snowdepths)
+snowdepths <- snowdepths %>%
+  mutate(AspectCat = factor(case_when(
+    aspect %in% (0:45)~ "North",
+    aspect %in% (315:360)~ "North",
+    aspect %in% 45:(90+45) ~ "East",
+    aspect %in% (90+45):(180+45) ~ "South",
+    aspect %in% (180+45):315 ~ "West"
+  )),
+  SnowPresence = factor(case_when(
+    snow == 0 ~ "None",
+    snow > 0 ~ "Some"
+  )),
+  Landf = factor(cover)
+  )
+levels(snowdepths$Landf) <- c("Not Forested", "Forested")
+
+snowdepths <- snowdepths %>% mutate(ElMean = ave(elev, strata),
+      ElevCent = elev - ElMean)
+
+favstats(aspect ~ 1, data = snowdepths)
+favstats(aspect ~ AspectCat, data = snowdepths)
+
+```
+
+
+**3) Before we dig into modeling, we need to consider how we are going to handle the `aspect` variable. Consider the sample mean of 159 and other summary statistics for the entire data set or the similar results broken down by `AspectCat`. Use the provided enhanced stripchart of the original aspect values based on the new `AspectCat` variable to help you to explain the `favstats` output for the `AspectCat` variable that I created from `aspect`. Why are the conventional summary statistics misleading with a variable such as `aspect`?**
+
+```{r}
+enhanced_stripchart(aspect ~ AspectCat, data = snowdepths)
+```
+- The way the new North aspect is scaled, the data are split based on the degree range provided. The range for North is 0-45 and 315-360, but when these average out, the value falls in the middle and provides a misleading result, because there are no observations at this value. This is further explained by the clustering of the data on the high and low range of this. In the summary stats, the mean output does not display/ represent that there are two groups. 
+
+**4) `angle` is also measured in degrees for the steepness of the slope. Use the provided summary statistics for `angle` to discuss how things are different for working with this variable as compared to `aspect`?**
+
+```{r}
+favstats(angle ~ 1, data = snowdepths)
+```
+Aspect is circular relative to cardinal directions which is better represented as a categorical variable while angle is a quantitative continuous variable. 
+
+**5) Make a contingency table that considers whether having a site that is forested/not (`Landf`) is related to encountering some measurable snow/not using `SnowPresence` to go with the provided mosaic plot. No discussion.**
+
+```{r fig.height=4,fig.width=8}
+snowdepths %>% ggplot() + 
+  geom_mosaic(aes(x = product(SnowPresence, Landf), fill = SnowPresence), offset = 0.02) + 
+  scale_fill_colorblind() 
+
+tally(SnowPresence ~ Landf, data = snowdepths)
+```
+
+**6) Use the previous table results to estimate and _carefully_ report the odds of encountering snow for each of the `Landf` categories. Then calculate the odds ratio for encountering snow that compares these two odds results. Do this "by hand" and show your work.** 
+
+* Odds of snow for no land cover: 499/115 to 1 = 4.34 to 1
+
+* Odds of snow for land cover: 294/109 to 1 = 2.69 to 1
+
+* Odds ratio: 4.34/ 2.69 = 1.61 of encountering snow 
+
+**7) The land cover status was calculated based on GIS work to define the strata in the sampling plan before they went to Big Sky to collect snow samples, then they went to Big Sky and either ran into snow at selected locations or did not. Is this a prospective, cross-sectional, or retrospective study as it regards land cover and snow presence?**
+
+- This is a retrospective study because they identified the locations but cannot randomly assign snow. They assessed whether it had snowed or not within their selected sites. Additionally, location sample size is arbitrary and thus can work on the log-odds scale. 
+
+
+**8) We want to confirm the previous work using a GLM. First we need to check how `glm` handled the presence of snow variable. Fit a mean-only logistic GLM and use it to check what category is being treated as a success. Explain how you checked this.**
+
+```{r }
+m1 <- glm(SnowPresence ~ 1, family = binomial, data = snowdepths)
+summary(m1)
+ilogit(1.26418)
+ilogit(glm(SnowPresence ~ 1, family = binomial, data = snowdepths)$coefficients)
+```
+- Snow is the reference (success) group because the estimated pi hat is 0.77 which is the probability of getting snow in either land cover. 499 + 294 / 1017 (total observations).
+
+**9) Use a logistic GLM to get an estimate of the log-odds ratio for snow presence/absence based on forested/not that matches your previous work. Hint: you might not get the odds ratio you calculated above and might need to invert (take 1/estimated OR) the OR result to switch the baseline/deviation predictor categories. Show and explain your work.**
+
+```{r }
+m2 <- glm(SnowPresence ~ Landf, family = binomial, data = snowdepths)
+summary(m2)
+ilogit(1.4677)
+ilogit(glm(SnowPresence ~ Landf, family = binomial, data = snowdepths)$coefficients)
+(1/exp(-0.4754))
+
+```
+- Our model provided an estimate of the mean log odds of encountering snow in forested land which is -0.4754. Exponentiating this estiamte would provide a log odds ratio of encountering snow in non forested land relative to forested. To get the odds ratio of encountering snow in forested vs not forested, we take the inverse of the exponentiated mean log odds of the model estimate. This value matches our value from number 6.
+
+
+**10) One could imagine that they could want to also explore the relationship between presence/absence of snow based on radiation (`rad`), elevation (`elev`), Forested/not, and Aspect (categorical version). Fit a model with these four predictors, generate a model summary, and two effects plots (one on the "link" scale and the other on the "response" scale). No discussion.**
+
+```{r}
+
+m3 <- glm(SnowPresence ~ rad + elev + Landf + AspectCat, family = binomial, data = snowdepths)
+summary(m3)
+
+plot(allEffects(m3, type = 'link'), grid = T)
+plot(allEffects(m3, type = 'response'), grid = T)
+```
+
+**11) Interpret the `Landf` "size" slope coefficient on the odds scale.**
+
+```{r}
+exp(-9.370e-01)
+confint(m3)
+exp(-1.450922e+00)
+exp(-4.396183e-01)
+```
+- For two similar sites differing in land cover, land forested has a mean odds of snow encounter of 0.392 times higher odds than non forested land CI 95% (0.234, 0.644), controlling for radiation, elevation, and aspect. 
