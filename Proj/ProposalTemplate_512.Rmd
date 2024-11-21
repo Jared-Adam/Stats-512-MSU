@@ -30,6 +30,7 @@ library(modelsummary)
 library(ggpp)
 library(multcomp)
 library(emmeans)
+library(MuMIn)
 # theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 ```
 
@@ -169,7 +170,7 @@ summary(m2)
 Anova(m2)
 
 plot(allEffects(m2), type = 'link',ylab = 'estimated log differnces in total predation', grid = T)
-plot(allEffects(m2), type = 'response', ylab = 'estimated probability differnces in total predation', grid = T)
+plot(allEffects(m2), type = 'response', xlim = c(0,1),ylab = 'estimated probability differnces in total predation', grid = T)
 
 
 
@@ -185,13 +186,26 @@ summary(m3)
 Anova(m3)
 
 plot(allEffects(m3), type = 'link',ylab = 'Estimated log differnces in total predation', grid = T)
-plot(allEffects(m3), type = 'response', ylab = 'Estimated probability differnces in total predation', grid = T)
+plot(allEffects(m3), type = 'response', xlim = c(0,1),ylab = 'Estimated probability differnces in total predation', grid = T)
 
 
 cld(emmeans(m3, ~treatment), Letters = letters)
 cld(emmeans(m3, ~growth_stage), Letters = letters)
 
 ```
+R squared and ICC
+```{r}
+r.squaredGLMM(m3)
+library(performance)
+r2(m3)
+
+summary(m3)
+
+# for plot 
+(2.600e-01) / (2.600e-01 + 1.700e-01 + .672e+00 + 5.569e-06)
+
+```
+The ICC for plot id is 0.236.
 
 ```{r}
 sent %>% 
@@ -201,7 +215,7 @@ sent %>%
   scale_x_productlist(labels=c("No CC", "Early", "Late", "Green"))+
   labs(title = 'Whole Team Sentinel Prey ~ Treatment',
        x = 'Treatment',
-       y = 'Total predation binary',
+       y = 'Estimated proportion',
        caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed between the no-cover and late-terminated treatment\nand the no-cover and planting-green treatment (p < 0.05).\nCompact letter display denotes differences among treatments.')+
   guides(fill = guide_legend(title = 'Predation:\n0 = no predation\n1 = predation'))+
   theme(legend.title = element_text(size = 14),
@@ -229,8 +243,8 @@ sent %>%
   scale_fill_manual(values = c("#E7298A","#1B9E77"))+
   labs(title = 'Whole Team Sentinel Prey ~ Growth Stage',
        x = 'Growth Stage',
-       y = 'Total predation binary',
-       caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed among all growth stages (p < 0.05), where R3 was the highest, followed by V5, and then V3.\nCompact letter display denotes differences among treatments.')+
+       y = 'Esimiated proportion',
+       caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed among all growth stages (p < 0.05), where R3 was the highest,\nfollowed by V5, and then V3.\nCompact letter display denotes differences among treatments.')+
   guides(fill = guide_legend(title = 'Predation:\n0 = no predation\n1 = predation'))+
   theme(legend.title = element_text(size = 14),
         legend.text = element_text(size = 14),
