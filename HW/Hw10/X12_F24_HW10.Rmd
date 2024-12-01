@@ -1,0 +1,164 @@
+---
+title: "STAT X12 HW 10"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(janitor)
+library(readxl)
+library(catstats2)
+library(mosaic)
+library(ggResidpanel)
+library(easyalluvial)
+library(mi)
+library(MuMIn)
+library(gtsummary)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Odds ratios and Logistic regression
+
+Read Ashley et al. (2016) available at  https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0159878
+
+* Focus on the progression after 80 weeks binary response variable and results related to it that are reported in Table 2.
+
+* Individually or in groups of up to 4, complete the following. A 3% bonus if you can find someone to work with you have not completed a HW with previously, noted in the last question.
+
+**1) I used their suggested cutoff for ICOS in row 5 of Table 2 to create a new binary variable (below/above 8031.61). What percent of the responses are below 8031.61? Then make a contingency table of above/ below the ICOS cutoff and the response of `Progression_Event`. Use that table to estimate and report the odds of progression at 80 weeks in the high and low ICOS groups.**
+
+```{r}
+d1 <- read_excel("journal.pone.0159878.s002.XLSX")
+summary(d1$ICOS)
+d1 <- d1 %>% mutate(ICOSF = factor(ifelse(ICOS<8031.61, "low", "high")))
+summary(d1$ICOSF)
+
+24/ (36+24)
+
+tally(Progression_Event ~ ICOSF, data = d1)
+```
+* Note that in `Progression_Event`, the 0s are the "non-progressors" and "progressors" are the 1's.
+
+- Percent of responses: 24 (low) / 36 + 24 (total) = 40% (percent under the cutoff)
+
+- Odds of progression at 80 weeks: 1 = progressors
+* When patients are above the ICOSF threshold of 8031.61 RFU, they are (27/9) 3 to 1  more likely to progress. When patients are below the threshold, they are (8/16) 0.5 to 1 more likely to progress. 
+
+**2) Use the previous results to estimate and interpret (report in a sentence) the odds ratio of progression between the ICOS defined groups. Hint: this will match the reported results in the "Unadjusted OR" column. Show your work. No CI needed at this point.**
+
+- High theshold progress / low threshold progress = 3/0.5 = 6
+* The estimated mean odds of success is 6 times higher in the high threshold group than in the low threshold group. 
+
+
+**3) Use a logistic regression model to obtain the same result. So fit a logistic regression model with the binary ICOSF predictor and binary progression response. Then work with the correct coefficient to get the same estimated OR as in the previous question. Show your work. You can use `tbl_regression(intercept = T, exponentiate = T)` to get a start on the results you need or `summary` and `confint`.**
+
+```{r}
+m1 <- glm(ICOSF ~ Progression_Event, family = 'binomial', data = d1)
+summary(m1)
+tbl_regression(m1, intercept = T, exponentiate = T)
+exp(1.78)
+exp(confint(m1))
+```
+- The reference group for progression event is the no progress group. This means the intercept is the estimate for the progress group. By exponentiating this value, we report a OR of 5.93 ~ 6 with 95% CI (0.80143754, 4.2011535). 
+
+**4) Now that you have matched the results in the "Unadjusted" situation with the logistic regression model, we can try to match their "Adjusted" inferences. Adjusted models contain `Age`, smoking status (code to rename to `Smoke` below), gender (`Male`), baseline FVC (`FVC_predicted_percent`), and DLCO (`DLCO_predicted_percent`) predicted percentages. Check for missing data on the combination of these variables, the ICOSF binary variable, and the binary response. "Clean" the data set if needed and then report the sample size total and as analyzed in the "adjusted" model that will contain these predictors.**
+
+
+```{r}
+d1 <- d1 %>% mutate(Male = factor(Male)) %>% 
+             dplyr::rename(Smoke = 'Smoke Status') %>% 
+             mutate(Smoke = factor(Smoke))
+d1 <- d1 %>% 
+  mutate(Age = as.numeric(Age),
+         FVC_predicted_percent = as.numeric(FVC_predicted_percent),
+         DLCO_predicted_percent = as.numeric(DLCO_predicted_percent))
+
+favstats(Progression_Event ~ ICOSF, data = d1)
+favstats(Progression_Event ~ Age , data = d1)
+favstats(Progression_Event ~ Smoke , data = d1)
+favstats(Progression_Event ~ Male , data = d1)
+favstats(Progression_Event ~ FVC_predicted_percent, data = d1)
+favstats(Progression_Event ~ DLCO_predicted_percent, data = d1)
+
+
+tally(Progression_Event ~ ICOSF + Age + Smoke + Male + FVC_predicted_percent + DLCO_predicted_percent, data = d1)
+
+
+
+```
+
+
+**5) Fit a logistic regression model containing those components to create the "adjusted" model for the ICOS binary predictor. Make effects plots on both the link and response scales - do not include partial residuals in the plots. No discussion.**
+
+```{r fig.width = 8, fig.height = 8}
+
+m2 <- glm(Progression_Event ~ ICOSF + Age + Smoke + Male + FVC_predicted_percent + DLCO_predicted_percent, family = 'binomial', data = d1)
+summary(m2)
+confint(m2)
+plot(allEffects(m2, type = 'link'), grid = T)
+plot(allEffects(m2, type = 'response'), grid = T)
+
+```
+
+
+**6) Report an evidence sentence for the ICOS predictor in the previous model.** 
+
+- There is strong evidence against the null hypothesis of no difference in progress between ICOS threshold (z = -3.306, p-value = 0.0009), controlled for Age, smoking status, gender, baseline FVC , and DLCO predicted percentages.
+
+**7) Then report a size interpretation on the odds scale for ICOSF from the adjusted model (include a 95% CI, noting that it might not match the one in the paper).**
+
+```{r}
+summary(m2)
+exp(-1.738e+01)
+
+tbl_regression(m2)
+
+```
+* High:  The estimated mean odds of success is 2.831144e-08 (95% CI (NA, 444.86113967) times higher in the high threshold group than in the low threshold group.
+
+* Low: The estimated mean odds of success is -2.6 (95% CI (-4.3, -1.2)) times lower in the low threshold group than in the high threshold group. 
+
+**8) There is something undesirable happening in the previous model that is highlighted in the effects plots. What is it? Make a contingency table and plot of progressing/not vs the smoking status. What does this tell you?**
+
+- It appears that the smoking distribution is sus. There is no variance in past or never, but there is a wide variance shown in the current smoking group. 
+
+```{r}
+tally(Progression_Event ~ Smoke, data = d1)
+
+```
+- This table shows that there is only one observation for current smoking. This means the estimate probability will be incorrect/ unreliable. 
+
+**9) Write out the estimated "adjusted" model, defining all model components. Make sure you are clear about what is a "success" in the model.**
++ Smoke + Male + FVC_predicted_percent + DLCO_predicted_percent
+
+* $Progression \sim \beta_0 + \beta_1I_{ICOSF = low} + \beta_2Age + \beta_3I_{Smoke = Never} + \beta_4I_{Smoke = Past} + \beta_5I_{Male= 1} + \beta_6FVC_predicted_percent + \beta_7DLCO_predicted_percent $ 
+
+Where beta 1 ICOSF low = 1, and 0 otherwise.
+Where beta 3 smoking never = 1, and 0 otherwise. 
+Where beta 4 smoking past = 1, and 0 otherwise.
+Where beta 5 male = 1, and 0 otherwise. 
+
+* $logit(\hat{\pi}) = -1.738e+01 -2.600e+00 + 5.555e-02  + 1.458e+01 + 1.556e+01 -8.020e-01 + 5.671e-03 + 1.130e-02$
+
+* Where ...
+
+**10) Use your estimated model to generate a predicted _probability_ of progressing of a subject who is Age 60, male, past smoker, has both FVCpred and DLCOpred of 50%, and is in the high ICOS group. Do not use the `predict` function, although you can check your work with it. Show your work.**
+
+**(-1.738e+01 (-2.600e+00*0) + (5.555e-02*60) + (1.458e+01*0) + (1.556e+01*1) (-8.020e-01*1) + (5.671e-03*.5) + (1.130e-02*.5))**
+
+```{r}
+-1.738e+01+ (5.555e-02*60) + (1.556e+01*1) -(8.020e-01*1)+ (5.671e-03*.5) + (1.130e-02*.5)
+
+```
+
+
+**11) Document any outside resources used. Also note if there is a new collaboration that qualifies you for the bonus. Report NONE if neither is the case.**
