@@ -55,14 +55,14 @@ tally(Progression_Event ~ ICOSF, data = d1)
 
 **2) Use the previous results to estimate and interpret (report in a sentence) the odds ratio of progression between the ICOS defined groups. Hint: this will match the reported results in the "Unadjusted OR" column. Show your work. No CI needed at this point.**
 
-- High theshold progress / low threshold progress = 3/0.5 = 6
+- High threshold progress / low threshold progress = 3/0.5 = 6
 * The estimated mean odds of success is 6 times higher in the high threshold group than in the low threshold group. 
 
 
 **3) Use a logistic regression model to obtain the same result. So fit a logistic regression model with the binary ICOSF predictor and binary progression response. Then work with the correct coefficient to get the same estimated OR as in the previous question. Show your work. You can use `tbl_regression(intercept = T, exponentiate = T)` to get a start on the results you need or `summary` and `confint`.**
 
 ```{r}
-m1 <- glm(ICOSF ~ Progression_Event, family = 'binomial', data = d1)
+m1 <- glm(Progression_Event ~ ICOSF, family = 'binomial', data = d1)
 summary(m1)
 tbl_regression(m1, intercept = T, exponentiate = T)
 exp(1.78)
@@ -77,86 +77,107 @@ exp(confint(m1))
 d1 <- d1 %>% mutate(Male = factor(Male)) %>% 
              dplyr::rename(Smoke = 'Smoke Status') %>% 
              mutate(Smoke = factor(Smoke))
-d1 <- d1 %>% 
+
+ggplot(d1, aes(fill = ICOSF, x = Progression_Event))+
+  geom_density(position = 'fill')+
+  scale_fill_viridis_d(end = 0.8, option = "C")+
+  labs(title = 'low = success')
+
+d1$ICOSF <- relevel(d1$ICOSF, ref = 'low')
+
+ggplot(d1, aes(fill = ICOSF, x = Progression_Event))+
+  geom_density(position = 'fill')+
+  scale_fill_viridis_d(end = 0.8, option = "C")+
+  labs(title = 'high = success')
+
+d2 <- d1 %>% 
   mutate(Age = as.numeric(Age),
          FVC_predicted_percent = as.numeric(FVC_predicted_percent),
-         DLCO_predicted_percent = as.numeric(DLCO_predicted_percent))
+         DLCO_predicted_percent = as.numeric(DLCO_predicted_percent)) %>% 
+  dplyr::select(ICOSF, Age, Smoke, Male, FVC_predicted_percent, DLCO_predicted_percent, Progression_Event) 
 
-favstats(Progression_Event ~ ICOSF, data = d1)
-favstats(Progression_Event ~ Age , data = d1)
-favstats(Progression_Event ~ Smoke , data = d1)
-favstats(Progression_Event ~ Male , data = d1)
-favstats(Progression_Event ~ FVC_predicted_percent, data = d1)
-favstats(Progression_Event ~ DLCO_predicted_percent, data = d1)
+library(mi)
+tdf <- missing_data.frame(data.frame(d2))
+image(tdf)
 
-
-tally(Progression_Event ~ ICOSF + Age + Smoke + Male + FVC_predicted_percent + DLCO_predicted_percent, data = d1)
-
-
+d2 <- d2 %>% 
+  na.omit()
 
 ```
 
+- 56 is the final sample size 
 
 **5) Fit a logistic regression model containing those components to create the "adjusted" model for the ICOS binary predictor. Make effects plots on both the link and response scales - do not include partial residuals in the plots. No discussion.**
 
 ```{r fig.width = 8, fig.height = 8}
 
-m2 <- glm(Progression_Event ~ ICOSF + Age + Smoke + Male + FVC_predicted_percent + DLCO_predicted_percent, family = 'binomial', data = d1)
+m2 <- glm(Progression_Event ~ ICOSF + Age + Smoke + Male + FVC_predicted_percent + DLCO_predicted_percent, family = 'binomial', data = d2)
 summary(m2)
 confint(m2)
-plot(allEffects(m2, type = 'link'), grid = T)
-plot(allEffects(m2, type = 'response'), grid = T)
+Anova(m2)
+plot(allEffects(m2), type = 'link', grid = T)
+plot(allEffects(m2), type = 'response', grid = T)
 
 ```
 
 
 **6) Report an evidence sentence for the ICOS predictor in the previous model.** 
 
-- There is strong evidence against the null hypothesis of no difference in progress between ICOS threshold (z = -3.306, p-value = 0.0009), controlled for Age, smoking status, gender, baseline FVC , and DLCO predicted percentages.
+- There is strong evidence against the null hypothesis of no difference in progress between ICOS threshold (z = 2.600e+00, p-value = 0.0009), controlled for Age, smoking status, gender, baseline FVC , and DLCO predicted percentages.
 
 **7) Then report a size interpretation on the odds scale for ICOSF from the adjusted model (include a 95% CI, noting that it might not match the one in the paper).**
 
 ```{r}
 summary(m2)
-exp(-1.738e+01)
+# exp the inverse of the high estimate 
+exp(-2.600e+00)
+# exp the high estimate 
+exp(2.600e+00)
+exp(confint(m2))
+#low cis inverse and exp the high cis 
+exp(-3.262485e+00)
+exp(-7.619097e+01)
 
 tbl_regression(m2)
 
 ```
-* High:  The estimated mean odds of success is 2.831144e-08 (95% CI (NA, 444.86113967) times higher in the high threshold group than in the low threshold group.
+* High:  The estimated mean odds of success is 13.46374 (95% CI (3.262485e+00, 7.619097e+01) times higher in the high threshold group than in the low threshold group.
 
-* Low: The estimated mean odds of success is -2.6 (95% CI (-4.3, -1.2)) times lower in the low threshold group than in the high threshold group. 
+* Low: The estimated mean odds of success is 0.07427358 (95% CI (0.03829312, 8.141083e-34) times lower in the low threshold group than in the high threshold group. 
 
 **8) There is something undesirable happening in the previous model that is highlighted in the effects plots. What is it? Make a contingency table and plot of progressing/not vs the smoking status. What does this tell you?**
 
-- It appears that the smoking distribution is sus. There is no variance in past or never, but there is a wide variance shown in the current smoking group. 
+- It appears that the smoking distribution cannot be used because there is 100% success and failure based on the progression event for the current smoking group. We know that if this is the case, the model will be unable to make an accurate log odds estimate because the denominator will either be 1 or 0. 
 
 ```{r}
-tally(Progression_Event ~ Smoke, data = d1)
+tally(Progression_Event ~ Smoke, data = d2)
 
 ```
 - This table shows that there is only one observation for current smoking. This means the estimate probability will be incorrect/ unreliable. 
 
 **9) Write out the estimated "adjusted" model, defining all model components. Make sure you are clear about what is a "success" in the model.**
-+ Smoke + Male + FVC_predicted_percent + DLCO_predicted_percent
 
-* $Progression \sim \beta_0 + \beta_1I_{ICOSF = low} + \beta_2Age + \beta_3I_{Smoke = Never} + \beta_4I_{Smoke = Past} + \beta_5I_{Male= 1} + \beta_6FVC_predicted_percent + \beta_7DLCO_predicted_percent $ 
 
-Where beta 1 ICOSF low = 1, and 0 otherwise.
+* $Progression \sim \beta_0 + \beta_1I_{ICOSF = high} + \beta_2Age + \beta_3I_{Smoke = Never} + \beta_4I_{Smoke = Past} + \beta_5I_{Male= 1} + \beta_6FVCPredictedPercent + \beta_7DLCOPredictedPercent $ 
+
+Where beta 1 ICOSF high = 1, and 0 otherwise.
 Where beta 3 smoking never = 1, and 0 otherwise. 
 Where beta 4 smoking past = 1, and 0 otherwise.
 Where beta 5 male = 1, and 0 otherwise. 
 
-* $logit(\hat{\pi}) = -1.738e+01 -2.600e+00 + 5.555e-02  + 1.458e+01 + 1.556e+01 -8.020e-01 + 5.671e-03 + 1.130e-02$
+* $logit(\hat{\pi}) = -1.998e+01 +2.600e+00 + 5.555e-02  + 1.458e+01 + 1.556e+01 -8.020e-01 + 5.671e-03 + 1.130e-02$
 
-* Where ...
+Where beta 1 ICOSF high = 1, and 0 otherwise.
+Where beta 3 smoking never = 1, and 0 otherwise. 
+Where beta 4 smoking past = 1, and 0 otherwise.
+Where beta 5 male = 1, and 0 otherwise. 
 
 **10) Use your estimated model to generate a predicted _probability_ of progressing of a subject who is Age 60, male, past smoker, has both FVCpred and DLCOpred of 50%, and is in the high ICOS group. Do not use the `predict` function, although you can check your work with it. Show your work.**
 
-**(-1.738e+01 (-2.600e+00*0) + (5.555e-02*60) + (1.458e+01*0) + (1.556e+01*1) (-8.020e-01*1) + (5.671e-03*.5) + (1.130e-02*.5))**
+**(-1.998e+01 (2.600e+00*0) + (5.555e-02*60) + (1.458e+01*0) + (1.556e+01*1) (-8.020e-01*1) + (5.671e-03*.5) + (1.130e-02*.5))**
 
 ```{r}
--1.738e+01+ (5.555e-02*60) + (1.556e+01*1) -(8.020e-01*1)+ (5.671e-03*.5) + (1.130e-02*.5)
+-1.998e+01+ (5.555e-02*60) + (1.556e+01*1) -(8.020e-01*1)+ (5.671e-03*.5) + (1.130e-02*.5)
 
 ```
 

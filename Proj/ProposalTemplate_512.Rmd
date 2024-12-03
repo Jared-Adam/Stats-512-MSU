@@ -102,6 +102,7 @@ clean23 <- s23 %>%
 sent <- rbind(clean21, clean22, clean23)
 as_tibble(sent)
 dim(sent)
+unique(sent$location)
 
 ```
 
