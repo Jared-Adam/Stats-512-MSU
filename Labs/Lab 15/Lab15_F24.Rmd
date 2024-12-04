@@ -1,0 +1,239 @@
+---
+title: "Lab 15"
+output:
+  word_document:
+    fig_height: 5
+    fig_width: 8
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+options(show.signif.stars = FALSE)
+
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(car)
+library(effects)
+library(readxl)
+library(mosaic)
+library(catstats2)
+library(ggResidpanel)
+library(easyalluvial)
+library(emmeans)
+library(patchwork)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(qqplotr)
+library(gtsummary)
+theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
+```
+
+
+# Rules
+
+In groups of 2 to 4, complete the following.
+
+# Modeling Snow Presence
+
+We will continue to use the data set from Wetlaufer, Hendrikx, and Marshall (2016) that explored the relationship between snow density ($kg/m^3$) or snow depth (`snow`, mm) with a suite of predictor variables. To be able to measure characteristics of snow, they needed to find snow in the locations they were sampling, so the focus in this lab will be on the snow presence or absence at each location (`SnowPresence`). We will be interested in using `elev` (Elevation, m), `Land` (forest cover with 0 = unforested and 10 = forested), `rad` (Potential Solar radiation, $Wh/m^2$),  `curvature` (see https://blogs.esri.com/esri/arcgis/2010/10/27/understanding-curvature-rasters/ for a description), `aspect` (orientation of slope in degrees (0 to 360)), and `angle` (angle of slope in degrees with 0 being flat) as fixed effect predictors. Also pay attention to the `strata` variable (read its definition in the paper) and the role that played in the data collection and should in the analysis.
+
+* Wetlaufer, K., Hendrikx, J., and L. Marshall (2016) Spatial Heterogeneity of Snow Density and Its Influence on Snow Water Equivalence Estimates in a Large Mountainous Basin. _Hydrology_, 3(1):3, doi:10.3390/hydrology3010003. Available at http://www.mdpi.com/2306-5338/3/1/3/htm  and on D2L
+
+Run the following code to get re-started with the data set, noting that we keep all the observations here as our interest is in snow being present or not.
+
+```{r fig.width=8, fig.height=4}
+data(snowdepths)
+snowdepths <- snowdepths %>%
+  mutate(AspectCat = factor(case_when(
+    aspect %in% (0:45)~ "North",
+    aspect %in% (315:360)~ "North",
+    aspect %in% 45:(90+45) ~ "East",
+    aspect %in% (90+45):(180+45) ~ "South",
+    aspect %in% (180+45):315 ~ "West"
+  )),
+  SnowPresence = factor(case_when(
+    snow == 0 ~ "None",
+    snow > 0 ~ "Some"
+  )),
+  Landf = factor(cover)
+  )
+levels(snowdepths$Landf) <- c("Not Forested", "Forested")
+
+snowdepths <- snowdepths %>% mutate(ElMean = ave(elev, strata),
+      ElevCent = elev - ElMean)
+
+glm2 <- glm(SnowPresence ~ Landf + rad + elev + AspectCat,
+            data = snowdepths, family = binomial)
+summary(glm2)
+confint(glm2)
+
+plot(allEffects(glm2), grid = T, type="link")
+plot(allEffects(glm2), grid = T, type = "response")
+```
+
+
+# Snow Presence Inferences and Interpretations
+
+**1) Check for multicollinearity in this `glm2` using the `vif` function. Report the results using the rules of thumb and then specifically for the most impacted variable.**
+
+```{r}
+vif(glm2)
+```
+- There appears to be no multicollinearity within these variables. The 0-3 range is good. The GVIF for LandF and Aspect are good as well as the VIFs for rad and elevation are good. The SE for rad effect is 1.675 times or (67.5%) than it would have been if it were correlated.  
+
+**2) We can do tests in GLMs using the z-statistics (distribution is the standard normal or just Z with no DF to report) reported in the model summary or using `Anova` on the models to get tests similar to Type II (or even Type III) ANOVA F-tests. The multi-degree of freedom tests use the Chi-squared distribution to find p-values but the hypotheses and interpretations otherwise match our previous work. Run `Anova` on the initial model and replace the censored parts of the following sentence to report the results from it for `AspectCat`.**
+
+```{r}
+Anova(glm2)
+```
+
+* There is strong evidence against the null hypothesis of no difference in snow presence  across levels of aspect ($\chi^2_{3} = 54.82$, p-value = 7.508e-12) controlled for LandF, rad, and elevation, so we would conclude that there is a difference in the snow presence rates across the different levels of aspect
+
+**3) Replace the censored parts of the size sentence for the elevation predictor on the odds scale.**
+
+* For two sites that differ by 1 meter in the elevation of the site but are otherwise similar, the [higher/larger] XXXXXX one is estimated to have a mean odds of a site having snow that is XXXX times higher (95% profile likelihood CI from XXXX to XXXXX), controlled for XXXXXXXXXXXX.
+
+
+```{r}
+glm2 %>% tbl_regression(intercept = T, exponentiate = T)
+
+exp(0.01342)
+exp(confint(glm2))[4,]
+
+```
+
+**4) In GLMs, we can also do pairwise comparisons using a version of Tukey-Kramer comparisons using emmeans. The results are on the link (here logit = log-odds) scale but can be translated to be on the odds scale. The following code generates pairwise comparisons among the levels of Aspect and provides an interpretation of the size for the East versus West facing sites on the odds scale. Modify the provided sentence to report the size for the North to West comparison.**
+
+* For two otherwise similar sites, the estimated mean odds of encountering snow in an East facing site are 23.83 times as much as for a West facing site (95% familywise-CI from 6.3 to 90.0), controlled for land cover, radiation, and elevation.
+
+* For two otherwise similar sites, the estimated mean odds of encountering snow in a North facing site are 4.371036 times as much as for a West facing site (95% familywise-CI from 0.9366927 to 20.4094902), controlled for land cover, radiation, and elevation.
+
+```{r}
+res1 <- emmeans(glm2, pairwise ~ AspectCat, adjust = "tukey")
+confint(res1)
+summary(res1)
+exp(3.171)
+exp(c(1.84, 4.50))
+
+exp(1.475)
+exp(c(-0.0654, 3.016))
+```
+
+
+
+_From this point forward, you have two options: (Option 1) Explore a generalized linear mixed model (GLMM), specifically the model above but with strata as a random effect, or (Option 2) explore building a final generalized linear model (GLM) for prediction purposes using model dredging. Complete only one of these, not both. We will provide the answer keys for both. Choose the pages for your chosen Q5 and Q6 in gradescope to delineate which of the options we should grade._
+
+
+* Previous results used elevation as a single predictor, but it contained variation at two levels - at the strata level (`ElMean`) and within the strata (around the mean for the strata, `ElevCent`). Those two variables are used now to highlight the modeling that also accounts for the strata-to-strata variation in both options that follow.
+
+## More inferences (Option 1)
+
+* Previous results used elevation as a single predictor, but it contained variation at two levels - at the strata level (`ElMean`) and within the strata (around the mean for the strata, `ElevCent`). Those two variables are used now to highlight the modeling that also accounts for the strata-to-strata variation.
+
+**5) The initial model assumed that the observations collected were independent of each other, but the observations are collected by taking a random sample of locations within each strata, grouping the responses together based on some of their characteristics. Use `glmer` to also account for the strata as a random effect and replace the single `elevation` predictor with the mean and centered versions. Note that `glmer` is very sensitive and sometimes has issues with different scaling of predictors. To avoid this issue, use the `scale_rad` provided for you instead of the `rad` used previously in the model. Then re-generate the test result for AspectCat. Report the distribution under the null, test statistic, and p-value for AspectCat in the GLM and GLMM. Which one would you use and why?**
+
+
+```{r}
+snowdepths <- snowdepths %>% mutate(scale_rad = scale(rad))
+glm3 <- glm(SnowPresence ~ Landf + scale_rad + ElMean + ElevCent + AspectCat,
+                data = snowdepths, family = binomial)
+Anova(glm3)
+
+```
+
+
+
+**6) The dotplot and the QQ-plot of the random effects are provided once you insert the name of the GLMM model and uncomment the code. If you had to pick a strata to ski in, which strata would you choose based on these plots and why would you choose it?**
+
+
+```{r}
+#dotplot(ranef(..., postVar = T))
+
+#as.data.frame(ranef(...)) %>% ggplot(aes(sample = condval)) +
+#  stat_qq_point(alpha = 0.6) +
+#  stat_qq_line() + theme(aspect.ratio = 1) +
+#  labs(x = "Theoretical Quantiles",
+#       y = "Sample Quantiles",
+#       title = "QQ-plot of random intercept of strata")
+
+```
+
+
+## Prediction (Option 2)
+
+**5) The following code splits the data into training and test data sets and fits an initial model to the training data. Modify the initial model to include at least one interaction. Then perform some sort of dredging on that model (your choice of criterion to use). Pick a final model based on those results and then re-fit that model and make an effects plot - replace the formula below to create `model_final` for use in the next question. You don't have to discuss your process or evidence from it or what model was chosen other than to make the plot.**
+
+```{r fig.width = 15, fig.height = 15}
+# Create training and test data sets (as we did in Lab 14). ----
+set.seed(123)
+trainingD <- snowdepths %>% slice_sample(prop = 0.7)
+testD <- anti_join(x = snowdepths, y = trainingD)
+dim(trainingD)
+dim(testD)
+
+# Modify the code below to use a different initial model (your choice). ----
+model_train <- glm(SnowPresence ~ Landf * rad + ElMean + ElevCent + AspectCat,
+  data = trainingD,  family = "binomial")
+
+# Perform dredging on that model (your choice of criterion to use). ----
+options(na.action = "na.fail")
+dredge_models <- dredge(global.model = model_train, rank = "AIC")
+head(dredge_models)
+library(ggrepel)
+library(cetcolor)
+ggdredgeplot(data = dredge_models, name = "Delta AIC")
+
+
+# Pick a final model, re-fit that model here, and make effects plots. ----
+model_final <- glm( SnowPresence ~ Landf * rad + ElMean + ElevCent + AspectCat,
+  data = trainingD,  family = "binomial")
+
+plot(allEffects(model_final),
+  type = "link",
+  ylab = "Estimated log-odds of encountering snow",
+  grid = TRUE
+)
+plot(allEffects(model_final),
+  type = "response",
+  ylab = "Estimated probability of encountering snow",
+  grid = TRUE
+)
+```
+
+**6) The following code will generate a plot of the predicted probabilities in the test data set using my initial model and your chosen model (that you called `model_final`) based on the true snow presence/absence of the sites. Use the provided results to calculate the correct classification rate of both my initial model and your selected model in the test data set. Which performed better and was there a noticeable difference in performance?**
+
+```{r}
+model_OGtrain <- glm(SnowPresence ~ Landf + rad + ElMean + ElevCent + AspectCat,
+  data = trainingD,  family = "binomial")
+
+testD <- testD %>%
+  mutate(testpreds1 = predict(model_OGtrain, newdata = testD, type = "response"),
+         testpreds2 = predict(model_final, newdata = testD, type = "response"))
+
+p1 <- enhanced_stripchart(testpreds1 ~ SnowPresence, data = testD) +
+  geom_hline(yintercept = 0.5, col = "red", lwd = 1) +
+  ylab("Estimated probability of encountering snow")
+
+p2 <- enhanced_stripchart(testpreds2 ~ SnowPresence, data = testD) +
+  geom_hline(yintercept = 0.5, col = "red", lwd = 1) +
+  ylab("Estimated probability of encountering snow")
+
+p1 + p2
+
+tally(testD$testpreds1 >0.5 ~ testD$SnowPresence)
+(228+45)/(306)
+
+
+
+tally(testD$testpreds2 >0.5 ~ testD$SnowPresence)
+(227+44)/(306)
+
+
+```
+
+- We were able to correctly classify 89% of snow presence with the additive model. 
+
