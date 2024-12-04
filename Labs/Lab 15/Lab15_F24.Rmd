@@ -95,7 +95,7 @@ Anova(glm2)
 
 **3) Replace the censored parts of the size sentence for the elevation predictor on the odds scale.**
 
-* For two sites that differ by 1 meter in the elevation of the site but are otherwise similar, the [higher/larger] XXXXXX one is estimated to have a mean odds of a site having snow that is XXXX times higher (95% profile likelihood CI from XXXX to XXXXX), controlled for XXXXXXXXXXXX.
+* For two sites that differ by 1 meter in the elevation of the site but are otherwise similar, the [higher/larger] site one is estimated to have a mean odds of a site having snow that is 1.01 times higher (95% profile likelihood CI from 1.011 to 1.016), controlled for LandF, rad, and Aspect.
 
 
 ```{r}
