@@ -4,10 +4,11 @@ output:
   word_document:
     fig_height: 5
     fig_width: 8
-date: "10/31/2024"
+date: "12/6/2024"
 author: "Jared Adam"
 ---
 
+# Packages 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE,
@@ -33,12 +34,11 @@ library(emmeans)
 library(MuMIn)
 library(DiagrammeR)
 library(DiagrammeRsvg)
+library(patchwork)
 # theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 ```
 
-# Part I (512 only, project proposal, 25 pts): 
-
-1) Read in your data set and run `dim` on it:
+# Data import and wrangling
 
 ```{r}
 set.seed(654321)
@@ -109,7 +109,7 @@ unique(sent$location)
 ```
 
 
-2) Prepare a short description of your data set (source if published paper exists), especially providing the study design, sample size, and variables of primary interest. If there is random sampling, note the population sampled from. If there is random assignment, note how and for which variable(s).
+# Experimental design 
 
 Data: Sentinel Prey assessment of arthropod-predator activity in corn fields. 
 
@@ -130,7 +130,7 @@ These data come from the Precision Sustainable Agriculture effort through the US
 
 Plots were randomly assigned to each block. Field sites were as random as they could be at each respective research station. Sentinel prey traps were placed between pre-determined rows and at specific length intervals within each plot to maintain consistency. 
 
-3) Make a `missing_data.frame` plot of your data set and explain any missing values indicated:
+# Locating missing values
 
 ```{r}
 library(mi)
@@ -140,13 +140,7 @@ image(tdf)
 
 ```
 
-
-
-4) Discuss any other use in classes or theses for the data - either that you have used it for or are currently working on for future submissions.
-
-**I am working on this for a publication. There is no published paper yet. None of the code from that is used here. This analysis is for all of the states combined, but in the future, I plan to run each state individually with their three years of data. I suspect results to differ based on some regional grouping (e.g., growing degree days, growth region, etc.), but am yet to decide what I will use. For now, I am mainly interested in the treatment and growth stage effects on the whole data set. **
-
-5) Provide at least one display of the data, focusing on the response of interest versus a predictor. If you have multiple predictors, try to plot the response versus those too.
+# Preliminary data display 
 
 ```{r}
 sent %>% 
@@ -162,7 +156,18 @@ sent %>%
 ```
 
 
-6) Provide an initial model you hope to fit (does not need to be fit). If you fit a model, add a model summary and effects plot.
+# Modeling 
+
+Theoretical model:
+
+${Predation|Treatment,GrowthStage} \sim \beta_0 + \beta_1I_{Treatment = 2}_i +  \beta_2I_{Treatment = 3}_i + \beta_3I_{Treatment = 4}_i + \beta_4I_{GrowthStage = V5}_i + \beta_5I_{GrowthStage = V3}_i + \Year_i + \Location_i + \Block_i + \Plot_i + \Error_i$
+
+Add the appropriate stuff below
+
+$\pi\{Predation|Treatment, GrowthStage} \sim \beta_0 + \beta_1I_{Treatment = 2} + \beta_2I_{Treatment = 4} + \beta_3I_{Treatment = 3} + \beta_4I_{GrowthStage = V5} + \beta_5I_{GrowthStage = V3}$
+
+
+## Initial model 
 
 ```{r}
 sent
@@ -181,7 +186,7 @@ plot(allEffects(m2), type = 'response', xlim = c(0,1),ylab = 'estimated probabil
 ```
 * There is weak evidence against the null of no interaction between treatment and growth stage Chi squared(6) = 8.25, p = 0.22, after controlling for the random effect of plot nested in block nested in location nested in year, and will remove the interaction term from the model. 
 
-**Model refinement**
+## Model refinement
 
 ```{r}
 m3 <- glmer(to.predated ~ treatment+growth_stage + (1|year/location/block/plot_id) , family = binomial, data = sent)
@@ -189,15 +194,16 @@ summary(m3)
 
 Anova(m3)
 
-plot(allEffects(m3), type = 'link',ylab = 'Estimated log differnces in total predation', grid = T)
-plot(allEffects(m3), type = 'response', xlim = c(0,1),ylab = 'Estimated probability differnces in total predation', grid = T)
+p1 <- plot(allEffects(m3), type = 'link', ylab = 'Estimated log differnces in total predation', grid = T)
+p2 <- plot(allEffects(m3), type = 'response', xlim = c(0,1),ylab = 'Estimated probability differnces in total predation', grid = T)
 
 
 cld(emmeans(m3, ~treatment), Letters = letters)
 cld(emmeans(m3, ~growth_stage), Letters = letters)
 
 ```
-R squared and ICC
+### R squared and ICC
+
 ```{r}
 r.squaredGLMM(m3)
 library(performance)
@@ -207,6 +213,8 @@ summary(m3)
 
 # for plot 
 (2.600e-01) / (2.600e-01 + 1.700e-01 + .672e+00 + 5.569e-06)
+
+exp(confint(m3))
 
 ```
 The ICC for plot id is 0.236.
@@ -289,6 +297,17 @@ sent %>%
 
 
 tally(to.predated ~ treatment + growth_stage, data = sent)
+
+datasummary_balance( ~ to.predated,data = sent)
+
+install.packages('openxlsx')
+library(openxlsx)
+
+table <- favstats(to.predated ~ treatment + growth_stage, data = sent)
+write.xlsx(table, 'test.xlsx')
+favstats(to.predated ~ growth_stage, data = sent)
+favstats(to.predated ~ treatment, data = sent)
+citation('mosaic')
 
 ```
 
@@ -437,5 +456,13 @@ g3 %>%
   rsvg::rsvg_png("threeleveld.png")
 ```
 
+
+Citations: 
+```{r}
+citation('DiagrammeRsvg')
+citation('car')
+citation('effects')
+citation('emmeans')
+```
 
 
