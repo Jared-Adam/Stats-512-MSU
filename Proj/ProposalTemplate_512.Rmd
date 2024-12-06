@@ -198,8 +198,8 @@ p1 <- plot(allEffects(m3), type = 'link', ylab = 'Estimated log differnces in to
 p2 <- plot(allEffects(m3), type = 'response', xlim = c(0,1),ylab = 'Estimated probability differnces in total predation', grid = T)
 
 
-cld(emmeans(m3, ~treatment), Letters = letters)
-cld(emmeans(m3, ~growth_stage), Letters = letters)
+cld(emmeans(m3, ~treatment, adjust = 'tukey', type = 'response'), Letters = letters)
+cld(emmeans(m3, ~growth_stage, adjust = 'tukey', type = 'response'), Letters = letters)
 
 ```
 ### R squared and ICC
@@ -214,7 +214,6 @@ summary(m3)
 # for plot 
 (2.600e-01) / (2.600e-01 + 1.700e-01 + .672e+00 + 5.569e-06)
 
-confint(m3)
 
 ```
 The ICC for plot id is 0.236.
