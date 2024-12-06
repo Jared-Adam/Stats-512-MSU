@@ -1,5 +1,5 @@
 ---
-title: "512 Project Part II"
+title: "Final project"
 output:
   word_document:
     fig_height: 5
@@ -34,7 +34,6 @@ library(emmeans)
 library(MuMIn)
 library(DiagrammeR)
 library(DiagrammeRsvg)
-library(patchwork)
 # theme_set(theme_bw()) #Prevents need for + theme_bw() in ggplots
 ```
 
@@ -117,7 +116,7 @@ These data come from the Precision Sustainable Agriculture effort through the US
 
 **Study design: **
 **Treatments** = 4; No cover crop, early-terminated cover crop, late-terminated cover crop, planting green
-**Plots** = 20; 5 blocks composed of 4 plots each = 20 plots / study site / year
+**Plots** = 20; 5-6 blocks (location dependent) composed of 4 plots each = 20 plots / study site / year
 **Years** = 3 (2021,2022,2023)
 **Locations** = This project comprises 16 states. Not all states collected sentinel prey data every year. Each site year was in a different field. 
 **Effort** = Data were collected at three corn growth stages / year (V3,V5,R3).
@@ -137,7 +136,6 @@ library(mi)
 # make an object of the missing df and then present the image
 tdf <- missing_data.frame(data.frame(sent))
 image(tdf)
-
 ```
 
 # Preliminary data display 
@@ -145,7 +143,7 @@ image(tdf)
 ```{r}
 sent %>% 
   ggplot() +
-  geom_mosaic(aes(x = product(treatment), fill = to.predated))+
+  geom_mosaic(aes(x = product(treatment), fill = to.predated), offset = 0.04)+
   facet_wrap(~growth_stage)+
   scale_fill_colorblind()+
   labs(title = 'Mosaic plot of Predation by Treatment and Growth Stage',
@@ -160,7 +158,7 @@ sent %>%
 
 Theoretical model:
 
-${Predation|Treatment,GrowthStage} \sim \beta_0 + \beta_1I_{Treatment = 2}_i +  \beta_2I_{Treatment = 3}_i + \beta_3I_{Treatment = 4}_i + \beta_4I_{GrowthStage = V5}_i + \beta_5I_{GrowthStage = V3}_i + \Year_i + \Location_i + \Block_i + \Plot_i + \Error_i$
+${Predation|Treatment,GrowthStage} \sim \beta_0 + \beta_1I_{Treatment = 2}_i +  \beta_2I_{Treatment = 4}_i + \beta_3I_{Treatment = 3}_i + \beta_4I_{GrowthStage = V5}_i + \beta_5I_{GrowthStage = V3}_i + \Year_i + \Location_i + \Block_i + \Plot_i + \Error_i$
 
 Add the appropriate stuff below
 
@@ -176,7 +174,6 @@ m2 <- glmer(to.predated ~ treatment*growth_stage + (1|year/location/block/plot_i
 summary(m2)
 
 Anova(m2)
-confint(m2)
 
 plot(allEffects(m2), type = 'link',ylab = 'estimated log differnces in total predation', grid = T)
 plot(allEffects(m2), type = 'response', xlim = c(0,1),ylab = 'estimated probability differnces in total predation', grid = T)
@@ -194,8 +191,8 @@ summary(m3)
 
 Anova(m3)
 
-p1 <- plot(allEffects(m3), type = 'link', ylab = 'Estimated log differnces in total predation', grid = T)
-p2 <- plot(allEffects(m3), type = 'response', xlim = c(0,1),ylab = 'Estimated probability differnces in total predation', grid = T)
+plot(allEffects(m3), type = 'link', ylab = 'Estimated log differnces in total predation', grid = T)
+plot(allEffects(m3), type = 'response', xlim = c(0,1),ylab = 'Estimated probability differnces in total predation', grid = T)
 
 
 cld(emmeans(m3, ~treatment, adjust = 'tukey', type = 'response'), Letters = letters)
@@ -217,6 +214,8 @@ summary(m3)
 
 ```
 The ICC for plot id is 0.236.
+
+# Final plots 
 
 ```{r}
 sent %>% 
@@ -275,14 +274,8 @@ sent %>%
   annotate('text', x = .85, y = 0.95, label = 'c', size = 8)
 
 ```
-* I plan to make additional plots with the proportion of predation. 
 
-
-* Used https://haleyjeppson.github.io/ggmosaic/reference/geom_mosaic.html for the scale_x_productlist function. 
-
-**How to I reorder my x axis? I was not able to find the syntax online. I tried limits, but it seems limits in the scale_x_productlist does not work like it does in scale_x_discrete. I would like it to do V3, V5, R3. I tried functions from the forcats package, but it seems ggmosaic is overriding those or is not compatible with them in the same line.**
-
-7) Start to work on a Table 1 that summarizes variables of interest, possibly by groups of interest. At a minimum, summarize the response variable, by a grouping variable if one exists. 
+# Table 1
 
 ```{r}
 # table as a proportion 
@@ -299,29 +292,20 @@ tally(to.predated ~ treatment + growth_stage, data = sent)
 
 datasummary_balance( ~ to.predated,data = sent)
 
-install.packages('openxlsx')
-library(openxlsx)
-
-table <- favstats(to.predated ~ treatment + growth_stage, data = sent)
-write.xlsx(table, 'test.xlsx')
-favstats(to.predated ~ growth_stage, data = sent)
-favstats(to.predated ~ treatment, data = sent)
-citation('mosaic')
+# install.packages('openxlsx')
+# library(openxlsx)
+# 
+# table <- favstats(to.predated ~ treatment + growth_stage, data = sent)
+# write.xlsx(table, 'test.xlsx')
+# favstats(to.predated ~ growth_stage, data = sent)
+# favstats(to.predated ~ treatment, data = sent)
+# citation('mosaic')
 
 ```
 
-8) Research question: 
-
-How do sentinel prey rates (1,0) change among treatments and growth stages and is there an interaction between treatment and growth stage? 
-
-9) SOI 
-
-G: The locations chosen for this experiment were not randomly selected (Universities volunteered to join the project), and thus the results would not generalize beyond the locations present. Additionally, the results only apply to years 2021-2023 in a corn monoculture following a cereal-rye cover crop. Data were collected at three, non-random time points throughout the season, and we cannot generalize beyond those time points. 
-
-C: The treatments and the trap location were randomly assigned in the field and thus, we can make causal inference on the predation levels within different treatments and parts of the field. 
 
 
-Study design figure 
+# Study design figure 
 
 ```{r}
 tally(~ year, sent)
@@ -330,7 +314,6 @@ tally(~block, sent)
 tally(~plot_id, sent)
 
 ```
-
 
 ```{r}
 names1 <- list("Year 2021", "Year 2022", "Year 2023")
@@ -456,12 +439,14 @@ g3 %>%
 ```
 
 
-Citations: 
+# Citations
+
 ```{r}
 citation('DiagrammeRsvg')
 citation('car')
 citation('effects')
 citation('emmeans')
+citation('performance')
 ```
 
 
