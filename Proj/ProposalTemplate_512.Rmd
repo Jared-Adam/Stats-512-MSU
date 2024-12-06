@@ -214,7 +214,7 @@ summary(m3)
 # for plot 
 (2.600e-01) / (2.600e-01 + 1.700e-01 + .672e+00 + 5.569e-06)
 
-exp(confint(m3))
+confint(m3)
 
 ```
 The ICC for plot id is 0.236.
@@ -228,7 +228,7 @@ sent %>%
   labs(title = 'Whole Team Sentinel Prey ~ Treatment',
        x = 'Treatment',
        y = 'Estimated proportion',
-       caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed between the no-cover and late-terminated treatment\nand the no-cover and planting-green treatment (p < 0.05).\nCompact letter display denotes differences among treatments.')+
+       caption = 'Figure 5:\nTotal predation binary where 1 = predation and 0 = no predation.\nPredation levels differed between the no-cover and late-terminated treatment\nand the no-cover and planting-green treatment (p < 0.05).\nCompact letter display denotes differences among treatments.')+
   guides(fill = guide_legend(title = 'Predation:\n0 = no predation\n1 = predation'))+
   theme(legend.title = element_text(size = 14),
         legend.text = element_text(size = 14),
@@ -256,7 +256,7 @@ sent %>%
   labs(title = 'Whole Team Sentinel Prey ~ Growth Stage',
        x = 'Growth Stage',
        y = 'Esimiated proportion',
-       caption = 'Total predation binary where 1 = predation and 0 = no predation.\nPredation levels differed among all growth stages (p < 0.05), where R3 was the highest,\nfollowed by V5, and then V3.\nCompact letter display denotes differences among treatments.')+
+       caption = 'Figure 6:\nTotal predation binary where 1 = predation and 0 = no predation.\nPredation levels differed among all growth stages (p < 0.05), where R3 was the highest,\nfollowed by V5, and then V3. Growth stages are ordered in reverse-chronological order.\nCompact letter display denotes differences among growth stages')+
   guides(fill = guide_legend(title = 'Predation:\n0 = no predation\n1 = predation'))+
   theme(legend.title = element_text(size = 14),
         legend.text = element_text(size = 14),
